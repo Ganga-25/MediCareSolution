@@ -11,11 +11,11 @@ namespace MediCare.Domain.Entities
     {
         public int LabTechnicianId { get; set; }
         public int UserId { get; set; }
-        public int DepartmentId { get; set; }
-        public string LicenceNumber { get; set; } = null!;
-        public string ContactNumber { get; set; } = string.Empty;
+        public int? DepartmentId { get; set; }
+        public string? LicenceNumber { get; set; } 
+        public string? ContactNumber { get; set; }
 
-        public string ProfilePhoto { get; set; }= string.Empty;
+        public string? ProfilePhoto { get; set; }
         public Veri_Status VerificationStatus { get; set; } = Veri_Status.Pending;
         public bool IsAvailable { get; set; }=false;
 

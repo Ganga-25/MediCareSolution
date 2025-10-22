@@ -19,6 +19,8 @@ namespace MediCare.Infrastructure.Extentions
             
             service.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             service.AddScoped<IUserService, UserService>();
+            service.AddScoped<ILabtechnicianService, LabtechnicianService>();
+
 
             return service;
         } 

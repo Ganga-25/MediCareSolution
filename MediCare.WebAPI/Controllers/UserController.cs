@@ -1,8 +1,10 @@
 ﻿using MediCare.Application.Contracts;
 using MediCare.Application.Contracts.Service;
 using MediCare.Application.DTOs;
+using MediCare.Application.DTOs.AuthDTO;
 using MediCare.Application.ServiceImplementations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MediCare.WebAPI.Controllers
@@ -54,7 +56,20 @@ namespace MediCare.WebAPI.Controllers
             // Map AuthResponse to proper HTTP status code
             return StatusCode(result.StatusCode, result);
         }
+
+        [HttpPost("Login")]
+        public async Task<IActionResult> LoginUsers([FromBody] LoginRequestDTO request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _userService.LoginAsync(request);
+
+            // Map AuthResponse to proper HTTP status code
+            return StatusCode(result.StatusCode, result);
+        }
     }
+
 
 
 } 

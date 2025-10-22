@@ -13,5 +13,7 @@ namespace MediCare.Application.Contracts.Service
         Task<AuthResponse> RegisterPatientAsync(RegisterRequestDTO request);
         Task<AuthResponse> RegisterDoctorAsync(RegisterRequestDTO request);
         Task<AuthResponse> RegisterLabTechnicianAsync(RegisterRequestDTO request);
+
+        Task<AuthResponse> LoginAsync(LoginRequestDTO request);
     }
 }
