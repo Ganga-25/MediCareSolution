@@ -1,4 +1,6 @@
-﻿using MediCare.Domain.Entities;
+﻿using MediCare.Application.Common;
+using MediCare.Application.DTOs.ProfileUpdateDTO;
+using MediCare.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +11,6 @@ namespace MediCare.Application.Contracts.Service
 {
     public interface IPatientService
     {
-        Task<Patients?> GetPatientByUserIdAsync(int userId);
-        Task<int> UpdatePatientProfileAsync(Patients patient);
+        Task<ApiResponse<bool>> RegisterPatientAsync(PatientUpdateDTO Patdto, int userId);
     }
 }

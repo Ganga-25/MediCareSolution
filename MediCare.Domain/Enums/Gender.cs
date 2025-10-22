@@ -11,6 +11,6 @@ namespace MediCare.Domain.Enums
         Male=0,
         Female=1,
         Transgender=2,
-        PreferNotToSay=3
+        Prefernottosay=3
     }
 }

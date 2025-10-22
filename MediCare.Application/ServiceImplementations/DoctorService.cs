@@ -11,20 +11,20 @@ using System.Threading.Tasks;
 
 namespace MediCare.Application.ServiceImplementations
 {
-    public class DoctorService:IDoctorService
+    public class DoctorService : IDoctorService
     {
         private readonly IGenericRepository<Users> _userRepo;
         private readonly IGenericRepository<Doctors> _doctorRepo;
-         public DoctorService(IGenericRepository<Users> userRepo, IGenericRepository<Doctors> doctorRepo)
+        public DoctorService(IGenericRepository<Users> userRepo, IGenericRepository<Doctors> doctorRepo)
         {
             _userRepo = userRepo;
             _doctorRepo = doctorRepo;
         }
 
-        async Task<ApiResponse<bool>> RegisterDoctorAsync(DoctorUpdateDTO Docdto, int userId)
+       public async Task<ApiResponse<bool>> RegisterDoctorAsync(DoctorUpdateDTO Docdto, int userId)
         {
             // 1️⃣ Check user exists
-            var users = await _doctorRepo.GetAllAsync("Users");
+            var users = await _userRepo.GetAllAsync("Users");
             if (!users.Any(u => u.UserId == userId))
                 return new ApiResponse<bool>(404, "User not found", false);
 
@@ -34,12 +34,12 @@ namespace MediCare.Application.ServiceImplementations
 
                 UserId = userId,
                 DepartmentId = Docdto.DepartmentId,
-                ContactNumber=Docdto.ContactNumber,
-                MedicalRegistrationNumber=Docdto.MedicalRegistrationNumber,
-                Fees=Docdto.Fees,
-                Experience=Docdto.Experience,
-                ProfilePhoto=Docdto.ProfilePhoto
-                
+                ContactNumber = Docdto.ContactNumber,
+                MedicalRegistrationNumber = Docdto.MedicalRegistrationNumber,
+                Fees = Docdto.Fees,
+                Experience = Docdto.Experience,
+                ProfilePhoto = Docdto.ProfilePhoto
+
 
             };
 
@@ -48,7 +48,7 @@ namespace MediCare.Application.ServiceImplementations
 
             return new ApiResponse<bool>(
                 rowsAffected > 0 ? 201 : 400,
-                rowsAffected > 0 ? "Lab technician registered successfully" : "Insert failed",
+                rowsAffected > 0 ? "Doctor registered successfully" : "Insert failed",
                 rowsAffected > 0
             );
         }

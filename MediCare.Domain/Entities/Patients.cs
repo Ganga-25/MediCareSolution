@@ -14,7 +14,7 @@ namespace MediCare.Domain.Entities
         public int UserId { get; set; }
         public int? Age { get; set; }
         public string? ContactNumber { get; set; }
-        public Gender? Gender { get; set; }
+        public string? Gender { get; set; }
 
     }
 }
