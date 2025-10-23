@@ -15,6 +15,21 @@ namespace MediCare.WebAPI.Controllers
             _doctorService=doctorService;
 
         }
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var response = await _doctorService.GetAllAsync();
+            return StatusCode(response.StatusCode, response);
+        }
+
+        // ✅ GET: api/doctors/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var response = await _doctorService.GetByIdAsync(id);
+            return StatusCode(response.StatusCode, response);
+        }
+
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] DoctorUpdateDTO Docdto, int userId)
         {
@@ -32,5 +47,13 @@ namespace MediCare.WebAPI.Controllers
             // 3️⃣ Return appropriate HTTP status code and response
             return StatusCode(result.StatusCode, result);
         }
+
+        [HttpGet("department/{departmentId}/doctors")]
+        public async Task<IActionResult> GetDoctorsByDepartment(int departmentId)
+        {
+            var response = await _doctorService.GetDoctorsByDepartmentAsync(departmentId);
+            return StatusCode(response.StatusCode, response);
+        }
+
     }
 }

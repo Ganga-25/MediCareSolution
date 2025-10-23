@@ -13,11 +13,11 @@ namespace MediCare.Application.ServiceImplementations
 {
     public class DepartmentService:IDepartmentService
     {
-        private readonly IDepartmentService _departmentService;
+        
         private readonly IGenericRepository<Departments> _departmentRepo;
-        public DepartmentService(IDepartmentService departmentService, IGenericRepository<Departments> departmentRepo)
+        public DepartmentService( IGenericRepository<Departments> departmentRepo)
         {
-            _departmentService = departmentService;
+            
             _departmentRepo=departmentRepo;
         }
 
@@ -59,7 +59,7 @@ namespace MediCare.Application.ServiceImplementations
                 addDepartment.Descriptions=addDepartment.Descriptions.Trim();
                 var department=(await _departmentRepo.GetAllAsync("SP_DEPARTMENTS"))
                                       .SingleOrDefault(d=>d.DepartmentName.ToLower()==addDepartment.DepartmentName.ToLower());
-                if (department == null) return new ApiResponse<bool>(400, "Department Already Exists.");
+                if (department != null) return new ApiResponse<bool>(400, "Department Already Exists.");
                 var departmentEntity = new Departments
                 {
                     DepartmentName = addDepartment.DepartmentName,
