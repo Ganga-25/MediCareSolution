@@ -55,5 +55,12 @@ namespace MediCare.WebAPI.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [HttpGet("pending")]
+        public async Task<IActionResult> GetPendingDoctors()
+        {
+            var response = await _doctorService.GetPendingDoctorsAsync();
+            return StatusCode(response.StatusCode, response);
+        }
+
     }
 }

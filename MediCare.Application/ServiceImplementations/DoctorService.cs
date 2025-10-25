@@ -1,12 +1,14 @@
 ﻿using MediCare.Application.Common;
 using MediCare.Application.Contracts.Repository;
 using MediCare.Application.Contracts.Service;
-using MediCare.Application.DTOs.CredentialsDTO;
+using MediCare.Application.DTOs.CredentialDTO;
 using MediCare.Application.DTOs.ProfileUpdateDTO;
 using MediCare.Domain.Entities;
+using MediCare.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,10 +18,12 @@ namespace MediCare.Application.ServiceImplementations
     {
         private readonly IGenericRepository<Users> _userRepo;
         private readonly IGenericRepository<Doctors> _doctorRepo;
-        public DoctorService(IGenericRepository<Users> userRepo, IGenericRepository<Doctors> doctorRepo)
+        private readonly IGenericRepository<DoctorCredential> _doctorCredRepo;
+        public DoctorService(IGenericRepository<Users> userRepo, IGenericRepository<Doctors> doctorRepo, IGenericRepository<DoctorCredential> doctorCredRepo)
         {
             _userRepo = userRepo;
             _doctorRepo = doctorRepo;
+            _doctorCredRepo= doctorCredRepo;
         }
 
 
@@ -135,6 +139,62 @@ namespace MediCare.Application.ServiceImplementations
 
             return new ApiResponse<IEnumerable<DoctorDTO>>(200, "Doctors fetched successfully", doctorDTOs);
         }
+
+        public async Task<ApiResponse<IEnumerable<DoctorDTO>>> GetPendingDoctorsAsync()
+        {
+            if (_doctorRepo == null) throw new Exception("_doctorRepo is null!");
+            if (_doctorCredRepo == null) throw new Exception("_credRepo is null!");
+
+            var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+            if (doctors == null) throw new Exception("No doctors returned from repository");
+
+            var allCredentials = await _doctorCredRepo.GetAllAsync("SP_DOC_CREDENTIALS");
+            if (allCredentials == null) throw new Exception("No doctor credentials returned from repository");
+
+            // Safe ToList conversions
+            var doctorList = doctors.ToList();
+            var credentialList = allCredentials.ToList();
+
+            var filtered = doctorList
+                .Where(d => d != null
+                         && d.VerificationStatus == Veri_Status.Pending
+                         && credentialList.Any(c => c != null && c.DoctorId == d.DoctorId))
+                .ToList();
+
+            var dtoList = filtered.Select(d => new DoctorDTO
+            {
+                DoctorId = d.DoctorId,
+                UserId = d.UserId,
+                DepartmentId = d.DepartmentId,
+                ProfilePhoto = d.ProfilePhoto,
+                ContactNumber = d.ContactNumber,
+                MedicalRegistrationNumber = d.MedicalRegistrationNumber,
+                Fees = d.Fees,
+                Experience = d.Experience,
+                VerificationStatus = d.VerificationStatus,
+                IsAvailable = d.IsAvailable,
+                Credentials = credentialList
+                                .Where(c => c != null && c.DoctorId == d.DoctorId)
+                                .Select(c => new DoctorCredentialDTO
+                                {
+                                    Id = c.Id,
+                                    CredentialType = c.CredentialType,
+                                    DegreeType = c.DegreeType,
+                                    DegreeName = c.DegreeName,
+                                    InstitutionName = c.InstitutionName,
+                                    HospitalName = c.HospitalName,
+                                    Designation = c.Designation,
+                                    DocumentType = c.DocumentType,
+                                    StartDate = c.StartDate,
+                                    EndDate = c.EndDate,
+                                    UploadDocument = c.UploadDocument
+                                }).ToList()
+            }).ToList();
+
+            return new ApiResponse<IEnumerable<DoctorDTO>>(200, "Pending doctors with credentials fetched successfully", dtoList);
+        }
+
+
 
 
     }

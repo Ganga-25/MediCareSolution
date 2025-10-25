@@ -1,7 +1,7 @@
 ﻿using MediCare.Application.Common;
 using MediCare.Application.Contracts.Repository;
 using MediCare.Application.Contracts.Service;
-using MediCare.Application.DTOs.CredentialsDTO;
+using MediCare.Application.DTOs.CredentialDTO;
 using MediCare.Application.DTOs.LabTestDTO;
 using MediCare.Domain.Entities;
 using System;
@@ -139,5 +139,35 @@ namespace MediCare.Application.ServiceImplementations
 
 
         }
+
+        public async Task<ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetDoctorCredentialsAsync(int doctorId)
+        {
+            // Get all credentials from the repo
+            var allCreds = await _docCredRepo.GetAllAsync("SP_DOC_CREDENTIALS");
+
+            // Filter credentials for the given doctor
+            var creds = allCreds.Where(c => c.DoctorId == doctorId);
+
+            // Map to DTO
+            var dtoList = creds.Select(c => new DoctorCredentialDTO
+            {
+                Id = c.Id,
+                DoctorId = c.DoctorId,
+                CredentialType = c.CredentialType,
+                DegreeType = c.DegreeType,
+                DegreeName = c.DegreeName,
+                InstitutionName = c.InstitutionName,
+                HospitalName = c.HospitalName,
+                Designation = c.Designation,
+                DocumentType = c.DocumentType,
+                UploadDocument = c.UploadDocument,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate
+            });
+
+            return new ApiResponse<IEnumerable<DoctorCredentialDTO>>(200, "Credentials fetched successfully", dtoList);
+        }
+
+       
     }
 }

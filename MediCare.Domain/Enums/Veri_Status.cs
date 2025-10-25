@@ -12,4 +12,5 @@ namespace MediCare.Domain.Enums
         Verified=1,
         Rejected=2
     }
+
 }

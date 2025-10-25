@@ -1,5 +1,5 @@
 ﻿using MediCare.Application.Common;
-using MediCare.Application.DTOs.CredentialsDTO;
+using MediCare.Application.DTOs.CredentialDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +14,6 @@ namespace MediCare.Application.Contracts.Service
         Task<ApiResponse<DoctorCredentialDTO>> GetByIdAsync(int id);
         Task<ApiResponse<bool>> AddAsync(AddDoctorCredentialDTO dto);
         Task<ApiResponse<bool>> UpdateAsync(UpdateDoctorCredentialDTO dto);
+        Task<ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetDoctorCredentialsAsync(int doctorId);
     }
 }

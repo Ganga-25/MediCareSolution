@@ -1,4 +1,5 @@
-﻿using MediCare.Domain.Enums;
+﻿using MediCare.Application.DTOs.CredentialDTO;
+using MediCare.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +28,7 @@ namespace MediCare.Application.DTOs.ProfileUpdateDTO
         public Decimal? Fees { get; set; }
         public int? Experience { get; set; }
         public Veri_Status VerificationStatus { get; set; } 
-        public bool IsAvailable { get; set; } 
+        public bool IsAvailable { get; set; }
+        public List<DoctorCredentialDTO>? Credentials { get; set; }
     }
 }

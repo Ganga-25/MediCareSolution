@@ -1,5 +1,4 @@
 ﻿using MediCare.Application.Common;
-using MediCare.Application.DTOs.CredentialsDTO;
 using MediCare.Application.DTOs.ProfileUpdateDTO;
 using MediCare.Domain.Entities;
 using System;
@@ -18,5 +17,7 @@ namespace MediCare.Application.Contracts.Service
         Task<ApiResponse<DoctorDTO>> GetByIdAsync(int id);
         Task<ApiResponse<bool>> RegisterDoctorAsync( DoctorUpdateDTO Docdto, int userId);
         Task<ApiResponse<IEnumerable<DoctorDTO>>> GetDoctorsByDepartmentAsync(int departmentId);
+        Task<ApiResponse<IEnumerable<DoctorDTO>>> GetPendingDoctorsAsync();
+        
     }
 }
