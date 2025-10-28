@@ -1,6 +1,7 @@
 ﻿using MediCare.Application.Common;
 using MediCare.Application.DTOs.ProfileUpdateDTO;
 using MediCare.Domain.Entities;
+using MediCare.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,8 @@ namespace MediCare.Application.Contracts.Service
         Task<ApiResponse<bool>> RegisterDoctorAsync( DoctorUpdateDTO Docdto, int userId);
         Task<ApiResponse<IEnumerable<DoctorDTO>>> GetDoctorsByDepartmentAsync(int departmentId);
         Task<ApiResponse<IEnumerable<DoctorDTO>>> GetPendingDoctorsAsync();
-        
+        Task<ApiResponse<bool>> UpdateDoctorVerificationStatusAsync(DoctorVerificationUpdateDTO dto);
+
+
     }
 }

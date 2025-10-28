@@ -26,6 +26,8 @@ namespace MediCare.Infrastructure.Extentions
             service.AddScoped<ISpecializationService, SpecializationService>();
             service.AddScoped<ILabTestService, LabTestService>();
             service.AddScoped<IDoctorCredentialService, DoctorCredentialService>();
+            service.AddScoped<IStaffAvailabilityService, StaffAvailabilityService>();
+            service.AddScoped<IAppointmentService, AppointmentService>();
 
 
             return service;

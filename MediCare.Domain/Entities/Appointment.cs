@@ -15,8 +15,8 @@ namespace MediCare.Domain.Entities
         public string UHID { get; set; } = null!;
         public int DoctorId { get; set; }
 
-        public DateOnly AppointmentDate { get; set; }
-        public TimeOnly AppointmentTime { get; set; }
+        public DateTime AppointmentDate { get; set; }
+        public string AppointmentTime { get; set; }=null!;
 
         public Mode Mode { get; set; }
         public string? Notes { get; set; }

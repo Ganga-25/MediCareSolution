@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MediCare.Application.DTOs.ProfileUpdateDTO
@@ -29,6 +30,14 @@ namespace MediCare.Application.DTOs.ProfileUpdateDTO
         public int? Experience { get; set; }
         public Veri_Status VerificationStatus { get; set; } 
         public bool IsAvailable { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<DoctorCredentialDTO>? Credentials { get; set; }
+    }
+
+    public class DoctorVerificationUpdateDTO
+    {
+        public int DoctorId { get; set; }
+        public Veri_Status VerificationStatus { get; set; } // "Verified" or "Rejected"
+        public int ModifiedBy { get; set; } // set from JWT in service/controller
     }
 }

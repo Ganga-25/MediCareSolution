@@ -1,5 +1,8 @@
 ﻿using MediCare.Application.Contracts.Service;
 using MediCare.Application.DTOs.ProfileUpdateDTO;
+using MediCare.Application.ServiceImplementations;
+using MediCare.Domain.Entities;
+using MediCare.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -61,6 +64,38 @@ namespace MediCare.WebAPI.Controllers
             var response = await _doctorService.GetPendingDoctorsAsync();
             return StatusCode(response.StatusCode, response);
         }
+
+
+        [HttpPut("verify/{doctorId}")]
+        public async Task<IActionResult> VerifyDoctor(int doctorId, [FromBody] string status)
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { message = "UserId not found in token" });
+
+            if (!int.TryParse(userIdClaim, out int userId))
+                return BadRequest(new { message = "Invalid UserId in token" });
+
+            // ✅ Convert string to enum safely
+            if (!Enum.TryParse<Veri_Status>(status, true, out var verificationStatusEnum))
+                return BadRequest(new { message = "Invalid verification status value" });
+
+            // ✅ Build DTO here
+            var dto = new DoctorVerificationUpdateDTO
+            {
+                DoctorId = doctorId,
+                VerificationStatus = verificationStatusEnum,
+                ModifiedBy = userId
+            };
+
+            var response = await _doctorService.UpdateDoctorVerificationStatusAsync(dto);
+
+            return StatusCode(response.StatusCode, response);
+        }
+
+
+
+
 
     }
 }

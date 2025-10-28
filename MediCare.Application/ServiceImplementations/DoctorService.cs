@@ -178,6 +178,7 @@ namespace MediCare.Application.ServiceImplementations
                                 .Select(c => new DoctorCredentialDTO
                                 {
                                     Id = c.Id,
+                                    DoctorId= d.DoctorId,
                                     CredentialType = c.CredentialType,
                                     DegreeType = c.DegreeType,
                                     DegreeName = c.DegreeName,
@@ -194,8 +195,24 @@ namespace MediCare.Application.ServiceImplementations
             return new ApiResponse<IEnumerable<DoctorDTO>>(200, "Pending doctors with credentials fetched successfully", dtoList);
         }
 
+        public async Task<ApiResponse<bool>> UpdateDoctorVerificationStatusAsync(DoctorVerificationUpdateDTO dto)
+        {
+            var doctorEntity = new Doctors
+            {
+                DoctorId = dto.DoctorId,
+                VerificationStatus = dto.VerificationStatus,
+                ModifiedBy = dto.ModifiedBy,
+                
+            };
+ 
+            int rowsAffected = await _doctorRepo.UpdateAsync("SP_DOCTORS", doctorEntity);
 
-
+            return new ApiResponse<bool>(
+                 rowsAffected > 0 ? 201 : 400,
+                 rowsAffected > 0 ? "Doctor status updated successfully" : "Failed to update",
+                 rowsAffected > 0
+             );
+        }
 
     }
 }
