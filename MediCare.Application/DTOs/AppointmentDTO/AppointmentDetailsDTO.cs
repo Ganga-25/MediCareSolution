@@ -7,19 +7,21 @@ using System.Threading.Tasks;
 
 namespace MediCare.Application.DTOs.AppointmentDTO
 {
-    public class AppointmentDTO
+    public class AppointmentDetailsDTO
     {
-       
+        public int AppointmentId { get; set; }
 
         public int PatientId { get; set; }
-        public string UHID { get; set; } = null!;
+        public string UHID { get; set; } 
         public int DoctorId { get; set; }
 
         public DateTime AppointmentDate { get; set; }
-        public String AppointmentTime { get; set; } = null!;
+        public string AppointmentTime { get; set; }
 
         public Mode Mode { get; set; }
         public string? Notes { get; set; }
-       
+        public AppointmentStatus AppointmentStatus { get; set; } 
+
+
     }
 }

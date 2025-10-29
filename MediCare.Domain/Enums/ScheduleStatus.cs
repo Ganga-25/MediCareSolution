@@ -9,7 +9,8 @@ namespace MediCare.Domain.Enums
     public enum ScheduleStatus
     {
         Pending=0,
-        Approved=1,
-        Completed=2
+        Rescheduled = 1,
+        Cancelled = 2,
+        Completed=3
     }
 }

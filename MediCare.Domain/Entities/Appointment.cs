@@ -16,7 +16,7 @@ namespace MediCare.Domain.Entities
         public int DoctorId { get; set; }
 
         public DateTime AppointmentDate { get; set; }
-        public string AppointmentTime { get; set; }=null!;
+        public TimeSpan AppointmentTime { get; set; }
 
         public Mode Mode { get; set; }
         public string? Notes { get; set; }
@@ -36,7 +36,6 @@ namespace MediCare.Domain.Entities
         public TimeOnly? NewTimeSlot { get; set; }
         public int? OldDoctorId { get; set; }
         public int? NewDoctorId { get; set; }
-        
-       
+               
     }
 }
