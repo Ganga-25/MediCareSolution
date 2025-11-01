@@ -11,8 +11,8 @@ namespace MediCare.Application.DTOs.AppointmentDTO
     {
         public int AppointmentId { get; set; }
         public Reschedule_Type RescheduleType { get; set; } // DateAndTime, Doctor, Both
-        public DateTime? NewDate { get; set; }
-        public TimeSpan? NewTime { get; set; }
+        public DateTime NewDate { get; set; }
+        public string NewTime { get; set; }
         public int? NewDoctorId { get; set; }
         public string? RescheduleReason { get; set; }
     }

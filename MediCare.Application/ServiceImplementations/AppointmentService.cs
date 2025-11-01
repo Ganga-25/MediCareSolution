@@ -124,32 +124,48 @@ namespace MediCare.Application.ServiceImplementations
 
         public async Task<ApiResponse<IEnumerable<AppointmentDetailsDTO>>> GetAppointmentsByPatientIdAsync(int userId)
         {
-            // Get PatientId using UserId
-            var patients = await _patientRepo.GetAllAsync("SP_Patients");
-            var patient = patients.FirstOrDefault(p => p.UserId == userId);
-
-            if (patient == null)
-                return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>(404, "Patient not found for this user.");
-                
-
-            var allAppointments = await _appointmentRepo.GetAllAsync("SP_APPOINTMENT");
-            var filtered = allAppointments.Where(a => a.PatientId == patient.PatientId && a.AppointmentStatus==AppointmentStatus.Scheduled && a.RescheduleStatus==ScheduleStatus.Rescheduled);
-
-            var appointments= filtered.Select(x=>new AppointmentDetailsDTO
+            try
             {
+                // Get PatientId using UserId
+                var patients = await _patientRepo.GetAllAsync("SP_Patients");
+                var patient = patients.SingleOrDefault(p => p.UserId == userId);
 
-                AppointmentId = x.AppointmentId,
-                PatientId=x.PatientId,
-                UHID = x.UHID,
-                DoctorId = x.DoctorId,
-                AppointmentDate=x.AppointmentDate,
-                AppointmentTime= x.AppointmentTime.ToString(@"hh\:mm"),
-                AppointmentStatus=x.AppointmentStatus,
-                Mode = x.Mode,
-                Notes = x.Notes
-            }).ToList();
 
-            return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>(200, "Appointments fetched for the patient successfully.", appointments);
+                if (patient == null)
+                    return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>(404, "Patient not found ");
+
+
+                var allAppointments = await _appointmentRepo.GetAllAsync("SP_APPOINTMENT");
+                var patientappointments = allAppointments.Where(p => p.PatientId == patient.PatientId).ToList();
+
+                var filtered = patientappointments.Where(a =>
+                    (a.AppointmentStatus == AppointmentStatus.Scheduled ||
+                     (a.RescheduleStatus == ScheduleStatus.Rescheduled && a.AppointmentStatus == AppointmentStatus.Cancelled))
+                );
+
+                if (!filtered.Any()) return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>(404, "No Appointments for this patient.");
+
+                var appointments = filtered.Select(x => new AppointmentDetailsDTO
+                {
+
+                    AppointmentId = x.AppointmentId,
+                    PatientId = x.PatientId,
+                    UHID = x.UHID,
+                    DoctorId = x.DoctorId,
+                    AppointmentDate = x.AppointmentDate,
+                    AppointmentTime = x.AppointmentTime.ToString(@"hh\:mm"),
+                    AppointmentStatus = x.AppointmentStatus,
+                    Mode = x.Mode,
+                    Notes = x.Notes
+                }).ToList();
+
+                return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>(200, "Appointments fetched for the patient successfully.", appointments);
+
+            }catch (Exception ex)
+            {
+                return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>(500, ex.Message);
+            }
+            
             }
 
         public async Task<ApiResponse<IEnumerable<AppointmentDetailsDTO>>> GetAppointmentsByDoctorIdAsync(int doctorId)
@@ -206,74 +222,175 @@ namespace MediCare.Application.ServiceImplementations
             return new ApiResponse<string>(200, "Appointment cancelled successfully");
         }
 
-        public async Task<ApiResponse<string>> RescheduleAppointmentAsync(RescheduleAppointmentDTO dto, int userId, string role)
-{
-    // Step 1: Get appointment details
-    var appointment = await _appointmentRepo.GetByIdAsync("SP_APPOINTMENT", "@APPOINTMENTID", dto.AppointmentId);
-    if (appointment == null)
-        return new ApiResponse<string>(404, "Appointment not found");
+                    public async Task<ApiResponse<string>> RescheduleAppointmentAsync(RescheduleAppointmentDTO dto, int userId, string role)
+            {
+                // Step 1: Get appointment details
+                var appointment = await _appointmentRepo.GetByIdAsync("SP_APPOINTMENT", "APPOINTMENTID", dto.AppointmentId);
+                if (appointment == null)
+                    return new ApiResponse<string>(404, "Appointment not found");
 
-    // Step 2: Validate ownership (patients can only reschedule their own)
-    if (role == "Patient" && appointment.PatientId != userId)
-        return new ApiResponse<string>(403, "You cannot modify someone else’s appointment");
+                        // Step 2: Validate ownership (patients can only reschedule their own)
+                        if (role == "Patient")
+                        {
+                            // Get all patients and find the one that matches the logged-in userId
+                            var allPatients = await _patientRepo.GetAllAsync("SP_Patients");
+                            var patient = allPatients.SingleOrDefault(p => p.UserId == userId);
+                        
+                            if (patient == null)
+                                return new ApiResponse<string>(404, "Patient record not found");
 
-    // Step 3: Save old values before changing
-    appointment.OldDate = DateOnly.FromDateTime(appointment.AppointmentDate);
-    appointment.OldTimeSlot = TimeOnly.FromTimeSpan(appointment.AppointmentTime);
-    appointment.OldDoctorId = appointment.DoctorId;
+                            // Check if appointment belongs to this patient
+                            if (appointment.PatientId != patient.PatientId)
+                                return new ApiResponse<string>(403, "You cannot modify someone else’s appointment");
+                        }
 
-    // Step 4: Apply new changes based on reschedule type
-    switch (dto.RescheduleType)
-    {
-        case Reschedule_Type.TimeOnly:
-            if (dto.NewDate == null || dto.NewTime == null)
-                return new ApiResponse<string>(400, "New date and time are required");
-            appointment.NewDate = DateOnly.FromDateTime(dto.NewDate.Value);
-            appointment.NewTimeSlot = TimeOnly.FromTimeSpan(dto.NewTime.Value);
-            appointment.AppointmentDate = dto.NewDate.Value;
-            appointment.AppointmentTime = dto.NewTime.Value;
-            break;
+                        TimeSpan parsedTime;
+                        try
+                        {
+                            parsedTime = DateTime.ParseExact(dto.NewTime.ToString(), "hh:mm tt", null).TimeOfDay;
+                        }
+                        catch
+                        {
+                            return new ApiResponse<string>(400, "Invalid appointment time format. Use 'hh:mm tt' (e.g. 06:30 PM).");
+                        }
 
-        case Reschedule_Type.DoctorOnly:
-            if (dto.NewDoctorId == null)
-                return new ApiResponse<string>(400, "New doctor ID is required");
-            appointment.NewDoctorId = dto.NewDoctorId;
-            appointment.DoctorId = dto.NewDoctorId.Value;
-            break;
+                        // Step 3: Save old values before changing
+                        appointment.OldDate = appointment.AppointmentDate;
+                appointment.OldTimeSlot = appointment.AppointmentTime;
+                appointment.OldDoctorId = appointment.DoctorId;
 
-        case Reschedule_Type.Both:
-            if (dto.NewDate == null || dto.NewTime == null || dto.NewDoctorId == null)
-                return new ApiResponse<string>(400, "New date, time, and doctor are required");
-            appointment.NewDate = DateOnly.FromDateTime(dto.NewDate.Value);
-            appointment.NewTimeSlot = TimeOnly.FromTimeSpan(dto.NewTime.Value);
-            appointment.NewDoctorId = dto.NewDoctorId;
-            appointment.AppointmentDate = dto.NewDate.Value;
-            appointment.AppointmentTime = dto.NewTime.Value;
-            appointment.DoctorId = dto.NewDoctorId.Value;
-            break;
+                // Step 4: Apply new changes based on reschedule type
+                switch (dto.RescheduleType)
+                {
+                case Reschedule_Type.TimeOnly:
+                    if (dto.NewDate == null || dto.NewTime == null)
+                        return new ApiResponse<string>(400, "New date and time are required");
 
-        default:
-            return new ApiResponse<string>(400, "Invalid reschedule type");
+                    // ✅ Step: Validate same doctor’s slot availability
+                    var doctor = await _doctorRepo.GetByIdAsync("SP_DOCTORS", "@DOCTORID", appointment.DoctorId);
+                    if (doctor == null)
+                        return new ApiResponse<string>(404, "Doctor not found.");
+
+                    var allAvailabilities = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
+                    var doctorAvailabilities = allAvailabilities
+                        .Where(a => a.StaffId == doctor.UserId && a.Date.Date == dto.NewDate.Date)
+                        .ToList();
+
+                    if (doctorAvailabilities.Count == 0)
+                        return new ApiResponse<string>(400, "No availability found for the selected doctor/date.");
+
+                    var doctorAvailability = doctorAvailabilities.FirstOrDefault(a =>
+                        !string.IsNullOrEmpty(a.SlotList) &&
+                        a.SlotList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(s => s.Trim())
+                                  .Contains(dto.NewTime.ToString(), StringComparer.OrdinalIgnoreCase));
+
+                    if (doctorAvailability == null)
+                        return new ApiResponse<string>(400, "Selected time slot is not available for this doctor.");
+
+                    // Proceed with update if available
+                    appointment.NewDate = dto.NewDate;
+                    appointment.NewTimeSlot = parsedTime;
+                    appointment.AppointmentDate = dto.NewDate;
+                    appointment.AppointmentTime = parsedTime;
+                    break;
+
+
+                case Reschedule_Type.DoctorOnly:
+                    
+                        if (dto.NewDoctorId == null)
+                            return new ApiResponse<string>(400, "New doctor ID is required");
+
+                        // ✅ Step 1: Get the new doctor's details
+                        var newDoctor = await _doctorRepo.GetByIdAsync("SP_DOCTORS", "@DOCTORID", dto.NewDoctorId);
+                        if (newDoctor == null)
+                            return new ApiResponse<string>(404, "New doctor not found.");
+
+                        // ✅ Step 2: Get availability for this doctor on the same appointment date
+                        var allAvailabilitie = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
+                        var doctorAvailabilitie = allAvailabilitie
+                            .Where(a => a.StaffId == newDoctor.UserId && a.Date.Date == appointment.AppointmentDate.Date)
+                            .ToList();
+
+                        if (doctorAvailabilitie.Count == 0)
+                            return new ApiResponse<string>(400, "Selected doctor has no availability on the current appointment date.");
+
+                        // ✅ Step 3: Check if doctor has the same time slot available
+                        var doctorAvailabilit = doctorAvailabilitie.FirstOrDefault(a =>
+                            !string.IsNullOrEmpty(a.SlotList) &&
+                            a.SlotList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(s => s.Trim())
+                                      .Contains(appointment.AppointmentTime.ToString(@"hh\\:mm"), StringComparer.OrdinalIgnoreCase));
+
+                        if (doctorAvailabilit == null)
+                            return new ApiResponse<string>(400, "Selected doctor is not available at this appointment time.");
+
+                        // ✅ Step 4: Apply changes
+                        appointment.NewDoctorId = dto.NewDoctorId;
+                        appointment.DoctorId = dto.NewDoctorId.Value;
+                        break;
+
+
+
+                case Reschedule_Type.Both:
+                    {
+                        if (dto.NewDate == null || dto.NewTime == null || dto.NewDoctorId == null)
+                            return new ApiResponse<string>(400, "New date, time, and doctor are required");
+
+                        // ✅ Step 1: Get the new doctor
+                        var newDoctors = await _doctorRepo.GetByIdAsync("SP_DOCTORS", "@DOCTORID", dto.NewDoctorId);
+                        if (newDoctors == null)
+                            return new ApiResponse<string>(404, "New doctor not found.");
+
+                        // ✅ Step 2: Get availability for this doctor on the new date
+                        var allAvailability = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
+                        var doctorAvailabili = allAvailability
+                            .Where(a => a.StaffId == newDoctors.UserId && a.Date.Date == dto.NewDate.Date)
+                            .ToList();
+
+                        if (doctorAvailabili.Count == 0)
+                            return new ApiResponse<string>(400, "Selected doctor has no availability on the chosen date.");
+
+                        // ✅ Step 3: Check if requested time slot is available
+                        var doctorAvailable = doctorAvailabili.FirstOrDefault(a =>
+                            !string.IsNullOrEmpty(a.SlotList) &&
+                            a.SlotList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(s => s.Trim())
+                                      .Contains(dto.NewTime.ToString(), StringComparer.OrdinalIgnoreCase));
+
+                        if (doctorAvailable == null)
+                            return new ApiResponse<string>(400, "Selected doctor is not available at the requested time on this date.");
+
+                        // ✅ Step 4: Apply changes
+                        appointment.NewDate = dto.NewDate;
+                        appointment.NewTimeSlot = parsedTime;
+                        appointment.NewDoctorId = dto.NewDoctorId;
+                        appointment.AppointmentDate = dto.NewDate;
+                        appointment.AppointmentTime = parsedTime;
+                        appointment.DoctorId = dto.NewDoctorId.Value;
+                        break;
+                    }
+
+
+                default:
+                        return new ApiResponse<string>(400, "Invalid reschedule type");
+                }
+            
+                // Step 5: Update reschedule details
+                appointment.RescheduleType = dto.RescheduleType;
+                appointment.RescheduleReason = dto.RescheduleReason ?? "Doctor not available";
+            appointment.RescheduleStatus = ScheduleStatus.Rescheduled;
+                appointment.AppointmentStatus = AppointmentStatus.Cancelled;
+
+                // Step 6: Update database (SP_APPOINTMENT handles @FLAG='UPDATE')
+                         var result = await _appointmentRepo.UpdateAsync("SP_APPOINTMENT", appointment);
+
+                if (result > 0)
+                    return new ApiResponse<string>(200, "Appointment rescheduled successfully");
+                else
+                    return new ApiResponse<string>(500, "Failed to reschedule appointment");
+                }
+
     }
 
-    // Step 5: Update reschedule details
-    appointment.RescheduleType = dto.RescheduleType;
-    appointment.RescheduleReason = dto.RescheduleReason ?? "Doctor not available";
-    appointment.RescheduleStatus = ScheduleStatus.Rescheduled;
-    appointment.AppointmentStatus = AppointmentStatus.Cancelled;
-
-    // Step 6: Update database (SP_APPOINTMENT handles @FLAG='UPDATE')
-    var result = await _appointmentRepo.UpdateAsync("SP_APPOINTMENT", appointment);
-
-    if (result > 0)
-        return new ApiResponse<string>(200, "Appointment rescheduled successfully");
-    else
-        return new ApiResponse<string>(500, "Failed to reschedule appointment");
-}
-
     }
-
-
-
-    }
-

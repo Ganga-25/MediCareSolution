@@ -74,36 +74,52 @@ namespace MediCare.Infrastructure
         });
     }
 
-    // Maps entity properties to DynamicParameters, excluding BaseEntity properties
-    private DynamicParameters BuildParameters(T entity, string flag)
-    {
-        var parameters = new DynamicParameters();
-        parameters.Add("@FLAG", flag);
+        private DynamicParameters BuildParameters(T entity, string flag)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@FLAG", flag);
 
-        // Properties to exclude (from BaseEntity)
-        var excludedProperties = new HashSet<string>
+            // Properties to exclude (from BaseEntity)
+            var excludedProperties = new HashSet<string>
             {
                 "CreatedOn", "CreatedBy", "ModifiedAt", "ModifiedBy",
                 "DeletedOn", "DeletedBy", "IsDeleted"
             };
 
-        foreach (var prop in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            // Skip excluded properties
-            if (excludedProperties.Contains(prop.Name))
-                continue;
-
-            var value = prop.GetValue(entity);
-
-            if (prop.PropertyType.IsEnum && value != null)
+            foreach (var prop in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                value = value.ToString();
+                // Skip excluded properties
+                if (excludedProperties.Contains(prop.Name))
+                    continue;
+
+                var value = prop.GetValue(entity);
+
+                // Handle enums: both nullable and non-nullable
+                if (value != null)
+                {
+                    // Check if the actual value is an enum
+                    var valueType = value.GetType();
+                    if (valueType.IsEnum)
+                    {
+                        // Convert enum to string
+                        value = value.ToString();
+                    }
+                }
+                else
+                {
+                    // For null values, check if the property type is a nullable enum
+                    var underlyingType = Nullable.GetUnderlyingType(prop.PropertyType);
+                    if (underlyingType != null && underlyingType.IsEnum)
+                    {
+                        // Keep value as null (already null)
+                        value = null;
+                    }
+                }
+
+                parameters.Add("@" + prop.Name.ToUpper(), value);
             }
 
-            parameters.Add("@" + prop.Name.ToUpper(), value);
+            return parameters;
         }
-
-        return parameters;
     }
-}
 }

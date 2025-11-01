@@ -58,7 +58,6 @@ namespace MediCare.Application.ServiceImplementations
 
             await _userRepo.AddAsync("Users", newUser);
 
-
             //var insertedUser = (await _userRepo.GetAllAsync("Users"))
             //                    .First(u => u.UserEmail == request.UserEmail);
 
@@ -171,7 +170,7 @@ namespace MediCare.Application.ServiceImplementations
             request.Password = request.Password.Trim();
 
             var users = (await _userRepo.GetAllAsync("Users"))
-                              .SingleOrDefault(u=>u.UserEmail==request.UserEmail);
+                              .SingleOrDefault(u=>u.UserEmail.ToLower()==request.UserEmail.ToLower());
             if (users == null) return new AuthResponse(404, "User Doesnot Exist.");
             if (users.IsDeleted == true) return new AuthResponse(403, "Your Account is blocked. Please Contact Support.");
             

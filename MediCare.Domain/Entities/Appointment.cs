@@ -30,10 +30,10 @@ namespace MediCare.Domain.Entities
         public string? RescheduleReason { get; set; }
 
         public ScheduleStatus? RescheduleStatus { get; set; }
-        public DateOnly? OldDate { get; set; }
-        public DateOnly? NewDate { get; set; }
-        public TimeOnly? OldTimeSlot { get; set; }
-        public TimeOnly? NewTimeSlot { get; set; }
+        public DateTime? OldDate { get; set; }
+        public DateTime? NewDate { get; set; }
+        public TimeSpan? OldTimeSlot { get; set; }
+        public TimeSpan? NewTimeSlot { get; set; }
         public int? OldDoctorId { get; set; }
         public int? NewDoctorId { get; set; }
                

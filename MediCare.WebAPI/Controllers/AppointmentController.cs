@@ -36,7 +36,7 @@ namespace MediCare.WebAPI.Controllers
         [HttpGet("patient")]
         public async Task<IActionResult> GetAppointmentsForPatient()
         {
-            var userIdClaim = User.FindFirst("userid")?.Value;
+            var userIdClaim = User.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
                 return Unauthorized("UserId not found in token.");
 
@@ -73,12 +73,12 @@ namespace MediCare.WebAPI.Controllers
         }
 
         [HttpPut("reschedule")]
-        [Authorize(Roles = "Patient,Admin")]
+        //[Authorize(Roles = "Patient,Admin")]
         public async Task<IActionResult> RescheduleAppointment([FromBody] RescheduleAppointmentDTO dto)
         {
             // ✅ Get userId and role from JWT token
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userIdClaim = User.FindFirst("userId")?.Value;
+            var roleClaim = User.FindFirst("userRole")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || string.IsNullOrEmpty(roleClaim))
                 return Unauthorized(new ApiResponse<string>(401, "Unauthorized access"));

@@ -4,16 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MediCare.Domain.Entities
+namespace MediCare.Application.DTOs.PrescriptionDTO
 {
-    public class Prescription:BaseEntity
+    public class AddPresciptionDTO
     {
-        public int PrescriptionId { get; set; }
         public int AppointmentId { get; set; }
-
-        // Core Prescription Info
-        public int PatientId { get; set; }
-        public int DoctorId { get; set; }
         public DateOnly PrescriptionDate { get; set; }
         public string? Summary { get; set; }
 
@@ -22,6 +17,5 @@ namespace MediCare.Domain.Entities
         public string Dosage { get; set; } = null!;
         public int NoOfDays { get; set; }
         public string? Instructions { get; set; }
-
     }
 }
