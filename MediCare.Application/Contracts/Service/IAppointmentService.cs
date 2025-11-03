@@ -10,7 +10,7 @@ namespace MediCare.Application.Contracts.Service
 {
     public interface IAppointmentService
     {
-        Task<ApiResponse<string>> BookAppointmentAsync(AppointmentDTO dto);
+        Task<ApiResponse<string>> BookAppointmentAsync(AppointmentDTO dto,int userId);
         Task<ApiResponse<IEnumerable<AppointmentDetailsDTO>>> GetAllAppointmentsAsync();
         Task<ApiResponse<IEnumerable<AppointmentDetailsDTO>>> GetAppointmentsByPatientIdAsync(int userId);
         Task<ApiResponse<IEnumerable<AppointmentDetailsDTO>>> GetAppointmentsByDoctorIdAsync(int doctorId);

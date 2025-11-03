@@ -2,6 +2,7 @@
 using MediCare.Application.Contracts.Service;
 using MediCare.Application.DTOs.AvailabilityDTO;
 using MediCare.Application.ServiceImplementations;
+using MediCare.Infrastructure.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -44,8 +45,8 @@ namespace MediCare.WebAPI.Controllers
                 return BadRequest(new ApiResponse<string>(400, "Invalid data"));
 
             // Get current user info from JWT token
-            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-            var role = User.FindFirstValue(ClaimTypes.Role) ?? "Doctor";
+            var currentUserId = User.GetUserId();
+            var role = User.GetUserRole();
 
             var response = await _staffAvaiService.AddAsync(dto, currentUserId, role);
             return StatusCode(response.StatusCode, response);

@@ -19,8 +19,8 @@ namespace MediCare.WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPrescription([FromBody] AddPresciptionDTO addPresciptionDTO)
         {
-            var userId= User.GetUserId();
-            var userRole=User.GetUserRole();
+            int userId= User.GetUserId();
+            string userRole=User.GetUserRole();
             var result= await _prescriptionService.AddPrescription(addPresciptionDTO, userId, userRole);
             return StatusCode(result.StatusCode, result);
         }

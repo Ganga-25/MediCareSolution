@@ -27,7 +27,7 @@ namespace MediCare.Application.DTOs.CredentialDTO
     public class AddDoctorCredentialDTO
     {
        
-        public int DoctorId { get; set; }
+       
         public CredentialType CredentialType { get; set; }
         public string DegreeType { get; set; }
         public string DegreeName { get; set; }

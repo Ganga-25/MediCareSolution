@@ -9,6 +9,7 @@ namespace MediCare.Domain.Entities
 {
     public class PatientLabTest:BaseEntity
     {
+        public int AppointmentId { get; set; }
         public int Id { get; set; }
         public int PatientId { get; set; }   
         public int DoctorId { get; set; }    

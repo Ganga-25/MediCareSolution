@@ -1,6 +1,7 @@
 ﻿using MediCare.Application.Contracts.Service;
 using MediCare.Application.DTOs.CredentialDTO;
 using MediCare.Application.ServiceImplementations;
+using MediCare.Infrastructure.Extentions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,8 +39,9 @@ namespace MediCare.WebAPI.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+            int userId=User.GetUserId();
 
-            var response = await _DocCredService.AddAsync(dto);
+            var response = await _DocCredService.AddAsync(dto,userId);
             return StatusCode(response.StatusCode, response);
         }
 
@@ -57,10 +59,11 @@ namespace MediCare.WebAPI.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpGet("{doctorId}/credentials")]
-        public async Task<IActionResult> GetDoctorCredentials(int doctorId)
+        [HttpGet("/credentials")]
+        public async Task<IActionResult> GetDoctorCredentials()
         {
-            var response = await _DocCredService.GetDoctorCredentialsAsync(doctorId);
+            int userId=User.GetUserId();
+            var response = await _DocCredService.GetDoctorCredentialsAsync(userId);
             return StatusCode(response.StatusCode, response);
         }
 

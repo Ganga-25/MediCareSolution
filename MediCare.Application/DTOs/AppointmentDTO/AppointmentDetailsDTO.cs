@@ -20,7 +20,19 @@ namespace MediCare.Application.DTOs.AppointmentDTO
 
         public Mode Mode { get; set; }
         public string? Notes { get; set; }
-        public AppointmentStatus AppointmentStatus { get; set; } 
+        public AppointmentStatus AppointmentStatus { get; set; }
+
+
+        public Reschedule_Type? RescheduleType { get; set; }
+        public string? RescheduleReason { get; set; }
+
+        public ScheduleStatus? RescheduleStatus { get; set; }
+        public DateTime? OldDate { get; set; }
+        public DateTime? NewDate { get; set; }
+        public string? OldTimeSlot { get; set; }
+        public string? NewTimeSlot { get; set; }
+        public int? OldDoctorId { get; set; }
+        public int? NewDoctorId { get; set; }
 
 
     }

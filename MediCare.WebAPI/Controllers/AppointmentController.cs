@@ -1,6 +1,7 @@
 ﻿using MediCare.Application.Common;
 using MediCare.Application.Contracts.Service;
 using MediCare.Application.DTOs.AppointmentDTO;
+using MediCare.Infrastructure.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,10 +19,12 @@ namespace MediCare.WebAPI.Controllers
         {
             _appointmentService = appointmentService;
         }
+
         [HttpPost]
         public async Task<IActionResult> AddAppointment([FromBody] AppointmentDTO dto)
         {
-            var result= await _appointmentService.BookAppointmentAsync(dto);
+            int userId=User.GetUserId();
+            var result= await _appointmentService.BookAppointmentAsync(dto,userId);
             return StatusCode(result.StatusCode, result);
         }
 
@@ -32,21 +35,17 @@ namespace MediCare.WebAPI.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ GET: /api/appointment/patient
+  
         [HttpGet("patient")]
         public async Task<IActionResult> GetAppointmentsForPatient()
         {
-            var userIdClaim = User.FindFirst("userId")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized("UserId not found in token.");
-
-            int userId = int.Parse(userIdClaim);
+           int userId=User.GetUserId();
 
             var response = await _appointmentService.GetAppointmentsByPatientIdAsync(userId);
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ GET: /api/appointment/doctor/{doctorId}
+        
         [HttpGet("doctor/{doctorId}")]
         public async Task<IActionResult> GetAppointmentsForDoctor(int doctorId)
         {
@@ -57,15 +56,9 @@ namespace MediCare.WebAPI.Controllers
         [HttpPut("cancel")]
         public async Task<IActionResult> CancelAppointment([FromBody] CancelAppointmentDTO dto)
         {
-            // Get values from JWT (your custom claim keys)
-            var userIdClaim = User.FindFirstValue("userId");
-            var roleClaim = User.FindFirstValue("userRole");
 
-            if (string.IsNullOrEmpty(userIdClaim))
-                return BadRequest(new { message = "User ID missing in token" });
-
-            int userId = int.Parse(userIdClaim);
-            string role = roleClaim ?? "Patient";
+            int userId = User.GetUserId();
+            string role = User.GetUserRole();
 
             var response = await _appointmentService.CancelAppointmentAsync(dto, userId, role);
 
@@ -76,20 +69,11 @@ namespace MediCare.WebAPI.Controllers
         //[Authorize(Roles = "Patient,Admin")]
         public async Task<IActionResult> RescheduleAppointment([FromBody] RescheduleAppointmentDTO dto)
         {
-            // ✅ Get userId and role from JWT token
-            var userIdClaim = User.FindFirst("userId")?.Value;
-            var roleClaim = User.FindFirst("userRole")?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || string.IsNullOrEmpty(roleClaim))
-                return Unauthorized(new ApiResponse<string>(401, "Unauthorized access"));
-
-            int userId = int.Parse(userIdClaim);
-            string role = roleClaim;
-
-            // ✅ Call service
-            var response = await _appointmentService.RescheduleAppointmentAsync(dto, userId, role);
-
-            // ✅ Return proper HTTP response
+                       
+            int userId = User.GetUserId();
+            string role = User.GetUserRole();
+            
+            var response = await _appointmentService.RescheduleAppointmentAsync(dto, userId, role);      
             return StatusCode(response.StatusCode, response);
         }
     }

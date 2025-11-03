@@ -15,25 +15,31 @@ namespace MediCare.Application.ServiceImplementations
     {
         private readonly IGenericRepository<Appointment> _appointmentRepo;
         private readonly IGenericRepository<Prescription> _prescriptionRepo;
-        public PrescriptionService(IGenericRepository<Appointment> appointmentRepo, IGenericRepository<Prescription> prescriptionRepo)
+        private readonly IGenericRepository<Doctors> _doctorRepo;
+        public PrescriptionService(IGenericRepository<Appointment> appointmentRepo, IGenericRepository<Prescription> prescriptionRepo,IGenericRepository<Doctors> doctorRepo)
         {
             _appointmentRepo = appointmentRepo;
             _prescriptionRepo = prescriptionRepo;
+            _doctorRepo = doctorRepo;
         }
-        public async Task<ApiResponse<string>> AddPrescription(AddPresciptionDTO addPresciptionDTO, int doctorId,string UserRole)
+        public async Task<ApiResponse<string>> AddPrescription(AddPresciptionDTO addPresciptionDTO, int userId,string UserRole)
         {
             try
             {
                 var appointment = await _appointmentRepo.GetByIdAsync("SP_APPOINTMENT", "APPOINTMENTID", addPresciptionDTO.AppointmentId);
                 if (appointment == null) return new ApiResponse<string>(404, "Appointmentnot found");
 
-                if (appointment.DoctorId != doctorId) return new ApiResponse<string>(403, "Unauthorized access — doctor mismatch");
+                var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+                var doctor= doctors.SingleOrDefault(x=>x.UserId == userId);
+                if (doctor == null) return new ApiResponse<string>(404, "Doctor not found");
+
+                if (appointment.DoctorId != doctor.DoctorId) return new ApiResponse<string>(403, "Unauthorized access — doctor mismatch");
 
                 var prescription = new Prescription
                 {
                     AppointmentId = appointment.AppointmentId,
                     PatientId = appointment.PatientId,
-                    DoctorId = doctorId,
+                    DoctorId =appointment.DoctorId,
                     PrescriptionDate = addPresciptionDTO.PrescriptionDate,
                     Summary = addPresciptionDTO.Summary,
                     Medicine = addPresciptionDTO.Medicine,
@@ -42,6 +48,7 @@ namespace MediCare.Application.ServiceImplementations
                     Instructions = addPresciptionDTO.Instructions,
                     CreatedBy=UserRole
                 };
+                await _prescriptionRepo.AddAsync("SP_PRESCRIPTION",prescription);
                 return new ApiResponse<string>(201, "Prescription Added Successfully");
 
             }

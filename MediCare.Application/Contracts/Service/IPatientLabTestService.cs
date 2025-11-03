@@ -1,5 +1,5 @@
 ﻿using MediCare.Application.Common;
-using MediCare.Application.DTOs.PrescriptionDTO;
+using MediCare.Application.DTOs.LabTestDTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 
 namespace MediCare.Application.Contracts.Service
 {
-    public interface IPrescriptionService
+    public interface IPatientLabTestService
     {
-        Task<ApiResponse<string>> AddPrescription(AddPresciptionDTO addPresciptionDTO, int userId, string UserRole);
-       
+         Task<ApiResponse<string>>AddLabtestToPatient(AddPatientLabTestDTO labTestDTO,int userId,string userRole);
     }
 }

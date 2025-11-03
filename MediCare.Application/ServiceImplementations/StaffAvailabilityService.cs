@@ -15,10 +15,14 @@ namespace MediCare.Application.ServiceImplementations
     public class StaffAvailabilityService : IStaffAvailabilityService
     {
         private readonly IGenericRepository<StaffAvailability> _repository;
+        private readonly IGenericRepository<Doctors> _doctorRepo;
+        private readonly IGenericRepository<LabTechnicians> _LabtechRepo;
 
-        public StaffAvailabilityService(IGenericRepository<StaffAvailability> repository)
+        public StaffAvailabilityService(IGenericRepository<StaffAvailability> repository, IGenericRepository<Doctors>doctorRepo,IGenericRepository<LabTechnicians>labtechRepo)
         {
             _repository = repository;
+            _doctorRepo = doctorRepo;
+            _LabtechRepo = labtechRepo;
         }
 
         public async Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetAllAsync()
@@ -67,70 +71,127 @@ namespace MediCare.Application.ServiceImplementations
 
         public async Task<ApiResponse<bool>> AddAsync(StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
         {
-
-            var newStaff = new StaffAvailability
+            try
             {
-                StaffType = dto.StaffType,
-                StaffId = dto.StaffId,
-                Date = dto.Date,
-                StartTime = dto.StartTime,
-                EndTime = dto.EndTime,
-                SlotDuration = dto.SlotDuration,
-                Mode = dto.Mode,
-                SlotList = dto.SlotList,
-                Session = dto.Session,
-                AvailableSlots = dto.AvailableSlots
-            };
+                int staffId=0;
+                StaffType staffType=StaffType.Doctor;
 
-            // ✅ Await the async repository call
-            var result = await _repository.AddAsync("SP_STAFF_AVAILABILITY", newStaff);
+                if (role == "Doctor")
+                {
+                    var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+                    var doctor = doctors.SingleOrDefault(x => x.UserId == currentUserId);
+                    if (doctor == null) return new ApiResponse<bool>(404, "Doctor not found");
 
-            return new ApiResponse<bool>(
-                statuscode: result > 0 ? 200 : 400,
-                message: result > 0 ? "Staff availability added successfully" : "Failed to add staff availability",
-                data: result > 0
-            );
-        }
+                    staffId = doctor.DoctorId;
+                    staffType = StaffType.Doctor;
+
+                }else if(role == "Labtechnician")
+                {
+
+                    var LabTechnicians = await _LabtechRepo.GetAllAsync("SP_LABTECH");
+                    var labtech = LabTechnicians.FirstOrDefault(x => x.UserId == currentUserId);
+                    if (labtech == null) return new ApiResponse<bool>(404, "Labtechnician not found");
+
+                    staffId = labtech.LabTechnicianId;
+                    staffType = StaffType.LabTechnicia;
+
+                }
+
+                    var newStaff = new StaffAvailability
+                    {
+                        StaffType =staffType,
+                        StaffId = staffId,
+                        Date = dto.Date,
+                        StartTime = dto.StartTime,
+                        EndTime = dto.EndTime,
+                        SlotDuration = dto.SlotDuration,
+                        Mode = dto.Mode,
+                        SlotList = dto.SlotList,
+                        Session = dto.Session,
+                        AvailableSlots = dto.AvailableSlots
+                    };
+
+                
+                var result = await _repository.AddAsync("SP_STAFF_AVAILABILITY", newStaff);
+
+                return new ApiResponse<bool>(
+                    statuscode: result > 0 ? 200 : 400,
+                    message: result > 0 ? "Staff availability added successfully" : "Failed to add staff availability",
+                    data: result > 0
+                );
 
 
-        public async Task<ApiResponse<int>> UpdateAsync(int id, StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
-        {
-            ApplyRoleLogic(dto, currentUserId, role);
-
-            var entity = MapToEntity(dto);
-            entity.Id = id; // Ensure ID is passed
-            await _repository.UpdateAsync("SP_STAFF_AVAILABILITY", entity);
-            return new ApiResponse<int>(201, "StaffAvailability updated successfully.");
-        }
-
-        private void ApplyRoleLogic(StaffAvailabilityCreateUpdateDTO dto, int userId, string role)
-        {
-            if (role == "Doctor")
-            {
-                dto.StaffType = StaffType.Doctor;
-                dto.StaffId = userId;
             }
-            else if (role == "Admin")
+            catch (Exception ex)
             {
-                dto.StaffType = StaffType.Doctor;
-                dto.StaffId = dto.StaffId;
+                 return new ApiResponse<bool>(500,ex.Message);
             }
+
+
         }
 
-        private StaffAvailability MapToEntity(StaffAvailabilityCreateUpdateDTO dto) =>
-            new StaffAvailability
+
+        public async Task<ApiResponse<bool>> UpdateAsync(int id, StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
+        {
+            try
             {
-                StaffId = dto.StaffId,
-                StaffType = dto.StaffType,
-                Date = dto.Date,
-                StartTime = dto.StartTime,
-                EndTime = dto.EndTime,
-                AvailableSlots = dto.AvailableSlots,
-                SlotDuration = dto.SlotDuration,
-                Mode = dto.Mode,
-                Session = dto.Session,
-                SlotList = dto.SlotList
-            };
+                int staffId = 0;
+                StaffType staffType = StaffType.Doctor;
+
+                if (role == "Doctor")
+                {
+                    var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+                    var doctor = doctors.SingleOrDefault(x => x.UserId == currentUserId);
+                    if (doctor == null) return new ApiResponse<bool>(404, "Doctor not found");
+
+                    staffId = doctor.DoctorId;
+                    staffType = StaffType.Doctor;
+
+                }
+                else if (role == "Labtechnician")
+                {
+
+                    var LabTechnicians = await _LabtechRepo.GetAllAsync("SP_LABTECH");
+                    var labtech = LabTechnicians.FirstOrDefault(x => x.UserId == currentUserId);
+                    if (labtech == null) return new ApiResponse<bool>(404, "Labtechnician not found");
+
+                    staffId = labtech.LabTechnicianId;
+                    staffType = StaffType.LabTechnicia;
+
+                }
+                var entity = new StaffAvailability
+                {
+                    StaffId = staffId,
+                    StaffType = staffType,
+                    Date = dto.Date,
+                    StartTime = dto.StartTime,
+                    EndTime = dto.EndTime,
+                    AvailableSlots = dto.AvailableSlots,
+                    SlotDuration = dto.SlotDuration,
+                    Mode = dto.Mode,
+                    Session = dto.Session,
+                    SlotList = dto.SlotList,
+                    ModifiedBy=currentUserId
+                    
+
+                };
+                await _repository.UpdateAsync("SP_STAFF_AVAILABILITY", entity);
+                return new ApiResponse<bool>(201, "StaffAvailability updated successfully.");
+
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>(500, ex.Message);
+            }
+
+            
+         
+        }
+
+     
+
+   
         public async Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetByStaffIdAsync(int staffId)
         {
             var result = (await _repository.GetAllAsync("SP_STAFF_AVAILABILITY"))

@@ -10,9 +10,6 @@ namespace MediCare.Application.DTOs.AppointmentDTO
     public class AppointmentDTO
     {
        
-
-        public int PatientId { get; set; }
-        public string UHID { get; set; } = null!;
         public int DoctorId { get; set; }
 
         public DateTime AppointmentDate { get; set; }

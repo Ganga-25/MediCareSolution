@@ -15,10 +15,12 @@ namespace MediCare.Application.ServiceImplementations
     public class DoctorCredentialService:IDoctorCredentialService
     {
         private readonly IGenericRepository<DoctorCredential> _docCredRepo;
+        private readonly IGenericRepository<Doctors> _doctorRepo;
 
-        public DoctorCredentialService(IGenericRepository<DoctorCredential> docCredRepo)
+        public DoctorCredentialService(IGenericRepository<DoctorCredential> docCredRepo,IGenericRepository<Doctors>doctorRepo)
         {
             _docCredRepo = docCredRepo;
+            _doctorRepo = doctorRepo;
         }
 
        public async Task<ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetAllAsync()
@@ -72,28 +74,42 @@ namespace MediCare.Application.ServiceImplementations
             return new ApiResponse<DoctorCredentialDTO>(200, "Doctor Credential fetched successfully", dto);
         }
 
-        public async Task<ApiResponse<bool>> AddAsync(AddDoctorCredentialDTO dto)
+        public async Task<ApiResponse<bool>> AddAsync(AddDoctorCredentialDTO dto,int userId)
         {
-            var parameters = new DoctorCredential
-            { 
-                DoctorId=dto.DoctorId,
-                CredentialType=dto.CredentialType,
-                DegreeType=dto.DegreeType,
-                DegreeName=dto.DegreeName,
-                InstitutionName=dto.InstitutionName,
-                HospitalName=dto.HospitalName,
-                Designation=dto.Designation,
-                DocumentType=dto.DocumentType,
-                UploadDocument=dto.UploadDocument,
-                StartDate=dto.StartDate,
-                EndDate=dto.EndDate                
-            };
+            try
+            {
+                var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+                var doctor = doctors.SingleOrDefault(x => x.UserId == userId);
+                if (doctor == null) return new ApiResponse<bool>(404, "Doctor not found");
 
-            var result = await _docCredRepo.AddAsync("SP_DOC_CREDENTIALS", parameters);
+                var parameters = new DoctorCredential
+                {
+                    DoctorId = doctor.DoctorId,
+                    CredentialType = dto.CredentialType,
+                    DegreeType = dto.DegreeType,
+                    DegreeName = dto.DegreeName,
+                    InstitutionName = dto.InstitutionName,
+                    HospitalName = dto.HospitalName,
+                    Designation = dto.Designation,
+                    DocumentType = dto.DocumentType,
+                    UploadDocument = dto.UploadDocument,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate
+                };
 
-            return new ApiResponse<bool>(result > 0 ? 200 : 400,
-                                         result > 0 ? "Doctor Credential Added  Successfully" : "Failed to add Doctor Credential",
-                                         result > 0);
+                var result = await _docCredRepo.AddAsync("SP_DOC_CREDENTIALS", parameters);
+
+                return new ApiResponse<bool>(result > 0 ? 200 : 400,
+                                             result > 0 ? "Doctor Credential Added  Successfully" : "Failed to add Doctor Credential",
+                                              result > 0);
+
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>(500, ex.Message);
+            }
+                                   
         }
 
         public async Task<ApiResponse<bool>> UpdateAsync(UpdateDoctorCredentialDTO dto)
@@ -140,33 +156,43 @@ namespace MediCare.Application.ServiceImplementations
 
         }
 
-        public async Task<ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetDoctorCredentialsAsync(int doctorId)
+        public async Task<ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetDoctorCredentialsAsync(int userId)
         {
             // Get all credentials from the repo
-            var allCreds = await _docCredRepo.GetAllAsync("SP_DOC_CREDENTIALS");
-
-            // Filter credentials for the given doctor
-            var creds = allCreds.Where(c => c.DoctorId == doctorId);
-
-            // Map to DTO
-            var dtoList = creds.Select(c => new DoctorCredentialDTO
+            try
             {
-                Id = c.Id,
-                DoctorId = c.DoctorId,
-                CredentialType = c.CredentialType,
-                DegreeType = c.DegreeType,
-                DegreeName = c.DegreeName,
-                InstitutionName = c.InstitutionName,
-                HospitalName = c.HospitalName,
-                Designation = c.Designation,
-                DocumentType = c.DocumentType,
-                UploadDocument = c.UploadDocument,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate
-            });
+                var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+                var doctor = doctors.SingleOrDefault(x => x.UserId == userId);
+                if (doctor == null) return new ApiResponse<IEnumerable<DoctorCredentialDTO>>(404, "Doctor not found");
 
-            return new ApiResponse<IEnumerable<DoctorCredentialDTO>>(200, "Credentials fetched successfully", dtoList);
-        }
+                var allCreds = await _docCredRepo.GetAllAsync("SP_DOC_CREDENTIALS");
+                var doctorCredentials = allCreds.Where(x => x.DoctorId == doctor.DoctorId);
+
+              
+                var dtoList = doctorCredentials.Select(c => new DoctorCredentialDTO
+                {
+                    Id = c.Id,
+                    DoctorId = c.DoctorId,
+                    CredentialType = c.CredentialType,
+                    DegreeType = c.DegreeType,
+                    DegreeName = c.DegreeName,
+                    InstitutionName = c.InstitutionName,
+                    HospitalName = c.HospitalName,
+                    Designation = c.Designation,
+                    DocumentType = c.DocumentType,
+                    UploadDocument = c.UploadDocument,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate
+                });
+
+                return new ApiResponse<IEnumerable<DoctorCredentialDTO>>(200, "Credentials fetched successfully", dtoList);
+
+
+            }catch (Exception ex)
+            {
+                return new ApiResponse<IEnumerable<DoctorCredentialDTO>>(500,ex.Message);
+            }
+         }
 
        
     }

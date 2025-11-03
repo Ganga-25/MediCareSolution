@@ -12,8 +12,8 @@ namespace MediCare.Application.Contracts.Service
     {
         Task< ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetAllAsync();
         Task<ApiResponse<DoctorCredentialDTO>> GetByIdAsync(int id);
-        Task<ApiResponse<bool>> AddAsync(AddDoctorCredentialDTO dto);
+        Task<ApiResponse<bool>> AddAsync(AddDoctorCredentialDTO dto,int userId);
         Task<ApiResponse<bool>> UpdateAsync(UpdateDoctorCredentialDTO dto);
-        Task<ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetDoctorCredentialsAsync(int doctorId);
+        Task<ApiResponse<IEnumerable<DoctorCredentialDTO>>> GetDoctorCredentialsAsync(int userId);
     }
 }
