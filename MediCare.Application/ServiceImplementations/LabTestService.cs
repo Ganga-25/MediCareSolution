@@ -53,6 +53,7 @@ namespace MediCare.Application.ServiceImplementations
                 SlotsPerDay = result.SlotsPerDay,
                 Descriptions = result.Descriptions,
                 TestCompletionTime = result.TestCompletionTime,
+               
 
 
             };

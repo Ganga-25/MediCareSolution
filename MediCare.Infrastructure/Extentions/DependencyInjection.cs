@@ -30,6 +30,7 @@ namespace MediCare.Infrastructure.Extentions
             service.AddScoped<IAppointmentService, AppointmentService>();
             service.AddScoped<IPrescriptionService,PrescriptionService>();
             service.AddScoped<IPatientLabTestService, PatientLabTestService>();
+            service.AddScoped<ILabTechnicianCredentialService,LabTechnicianCredentialService>();
 
 
             return service;

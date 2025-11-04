@@ -57,7 +57,8 @@ namespace MediCare.Application.ServiceImplementations
             // 2️⃣ Prepare new lab technician
             var newLabTech = new LabTechnicians
             {
-                
+
+                UserId=userId,
                 DepartmentId = labTech.DepartmentId,
                 LicenceNumber = labTech.LicenceNumber,
                 ContactNumber = labTech.ContactNumber,

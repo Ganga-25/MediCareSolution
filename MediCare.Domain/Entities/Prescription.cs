@@ -14,7 +14,7 @@ namespace MediCare.Domain.Entities
         // Core Prescription Info
         public int PatientId { get; set; }
         public int DoctorId { get; set; }
-        public DateOnly PrescriptionDate { get; set; }
+        public DateTime PrescriptionDate { get; set; }
         public string? Summary { get; set; }
 
         // Medication Details

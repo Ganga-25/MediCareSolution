@@ -18,14 +18,22 @@ namespace MediCare.WebAPI.Controllers
             _patientLabTestService = patientLabTestService;
         }
         [HttpPost]
-        public async Task<IActionResult>AddLabTest(AddPatientLabTestDTO addLabTestDTO)
+        public async Task<IActionResult>AddLabTest([FromBody]AddPatientLabTestDTO addLabTestDTO)
         {
             int userId=User.GetUserId();
             string userRole=User.GetUserRole();
             var result=await _patientLabTestService.AddLabtestToPatient(addLabTestDTO, userId, userRole);
             return StatusCode(result.StatusCode, result);
 
-        }                                                        
+        }
+        [HttpGet("/LabTests")]
+        public async Task<IActionResult> GetPrescriptionforUser()
+        {
+            int userId=User.GetUserId();
+            var result= await _patientLabTestService.GetLabTestforPatient(userId);
+            return StatusCode(result.StatusCode, result);
+
+        }
         
     }
 }

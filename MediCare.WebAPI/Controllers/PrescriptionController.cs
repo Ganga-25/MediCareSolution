@@ -24,5 +24,14 @@ namespace MediCare.WebAPI.Controllers
             var result= await _prescriptionService.AddPrescription(addPresciptionDTO, userId, userRole);
             return StatusCode(result.StatusCode, result);
         }
+
+        [HttpGet("patients")]
+        public async Task<IActionResult> GetPrescriptionforPatient()
+        {
+            int userId=User.GetUserId();
+            var result= await _prescriptionService.GetPrescriptionforPatient(userId);
+            return StatusCode(result.StatusCode, result);
+
+        }
     }
 }

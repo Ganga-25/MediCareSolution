@@ -6,9 +6,14 @@ using System.Threading.Tasks;
 
 namespace MediCare.Application.DTOs.PrescriptionDTO
 {
-    public class AddPresciptionDTO
+    public class PrescriptionViewDTO
     {
+        public int PrescriptionId { get; set; }
         public int AppointmentId { get; set; }
+
+        // Core Prescription Info
+        public int PatientId { get; set; }
+        public int DoctorId { get; set; }
         public DateTime PrescriptionDate { get; set; }
         public string? Summary { get; set; }
 

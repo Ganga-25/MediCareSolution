@@ -11,6 +11,7 @@ namespace MediCare.Application.Contracts.Service
     public interface IPrescriptionService
     {
         Task<ApiResponse<string>> AddPrescription(AddPresciptionDTO addPresciptionDTO, int userId, string UserRole);
+        Task<ApiResponse<IEnumerable<PrescriptionViewDTO>>> GetPrescriptionforPatient(int userId);
        
     }
 }

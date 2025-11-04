@@ -11,5 +11,6 @@ namespace MediCare.Application.Contracts.Service
     public interface IPatientLabTestService
     {
          Task<ApiResponse<string>>AddLabtestToPatient(AddPatientLabTestDTO labTestDTO,int userId,string userRole);
+        Task<ApiResponse<IEnumerable<LabtestViewDTO>>> GetLabTestforPatient(int userId);
     }
 }
