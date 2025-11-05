@@ -13,6 +13,8 @@ namespace MediCare.Application.Contracts.Service
     {
         Task<ApiResponse<LabTechnicianDTO>> GetLabTechByUserIdAsync(int userId);
         Task<ApiResponse<bool>> RegisterLabTechnicianAsync(LabTechnicianUpdateDTO labTech, int userId);
+        Task<ApiResponse<IEnumerable<LabTechnicianDTO>>>GetPendingVerificationLabtech();
+        Task<ApiResponse<string>> UpdateLabtechnicianVerficationStatus(UpdateverificationstatusofLabtechDTO dto,int userId);
 
     }
 }

@@ -142,43 +142,44 @@ namespace MediCare.Application.ServiceImplementations
 
         public async Task<ApiResponse<IEnumerable<DoctorDTO>>> GetPendingDoctorsAsync()
         {
-            if (_doctorRepo == null) throw new Exception("_doctorRepo is null!");
-            if (_doctorCredRepo == null) throw new Exception("_credRepo is null!");
-
-            var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
-            if (doctors == null) throw new Exception("No doctors returned from repository");
-
-            var allCredentials = await _doctorCredRepo.GetAllAsync("SP_DOC_CREDENTIALS");
-            if (allCredentials == null) throw new Exception("No doctor credentials returned from repository");
-
-            // Safe ToList conversions
-            var doctorList = doctors.ToList();
-            var credentialList = allCredentials.ToList();
-
-            var filtered = doctorList
-                .Where(d => d != null
-                         && d.VerificationStatus == Veri_Status.Pending
-                         && credentialList.Any(c => c != null && c.DoctorId == d.DoctorId))
-                .ToList();
-
-            var dtoList = filtered.Select(d => new DoctorDTO
+            try
             {
-                DoctorId = d.DoctorId,
-                UserId = d.UserId,
-                DepartmentId = d.DepartmentId,
-                ProfilePhoto = d.ProfilePhoto,
-                ContactNumber = d.ContactNumber,
-                MedicalRegistrationNumber = d.MedicalRegistrationNumber,
-                Fees = d.Fees,
-                Experience = d.Experience,
-                VerificationStatus = d.VerificationStatus,
-                IsAvailable = d.IsAvailable,
-                Credentials = credentialList
+                var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+                if (doctors == null) throw new Exception("No doctors returned from repository");
+
+                var allCredentials = await _doctorCredRepo.GetAllAsync("SP_DOC_CREDENTIALS");
+                if (allCredentials == null) throw new Exception("No doctor credentials returned from repository");
+
+                // Safe ToList conversions
+                var doctorList = doctors.ToList();
+                var credentialList = allCredentials.ToList();
+
+                var filtered = doctorList
+                    .Where(d => d != null
+                             && d.VerificationStatus == Veri_Status.Pending
+                             && credentialList.Any(c => c != null && c.DoctorId == d.DoctorId))
+                    .ToList();
+
+                if (!filtered.Any()) return new ApiResponse<IEnumerable<DoctorDTO>>(404, "No doctors found for pending verification");
+
+                var dtoList = filtered.Select(d => new DoctorDTO
+                {
+                    DoctorId = d.DoctorId,
+                    UserId = d.UserId,
+                    DepartmentId = d.DepartmentId,
+                    ProfilePhoto = d.ProfilePhoto,
+                    ContactNumber = d.ContactNumber,
+                    MedicalRegistrationNumber = d.MedicalRegistrationNumber,
+                    Fees = d.Fees,
+                    Experience = d.Experience,
+                    VerificationStatus = d.VerificationStatus,
+                    IsAvailable = d.IsAvailable,
+                    Credentials = credentialList
                                 .Where(c => c != null && c.DoctorId == d.DoctorId)
                                 .Select(c => new DoctorCredentialDTO
                                 {
                                     Id = c.Id,
-                                    DoctorId= d.DoctorId,
+                                    DoctorId = d.DoctorId,
                                     CredentialType = c.CredentialType,
                                     DegreeType = c.DegreeType,
                                     DegreeName = c.DegreeName,
@@ -190,29 +191,47 @@ namespace MediCare.Application.ServiceImplementations
                                     EndDate = c.EndDate,
                                     UploadDocument = c.UploadDocument
                                 }).ToList()
-            }).ToList();
+                }).ToList();
 
-            return new ApiResponse<IEnumerable<DoctorDTO>>(200, "Pending doctors with credentials fetched successfully", dtoList);
+                return new ApiResponse<IEnumerable<DoctorDTO>>(200, "Pending doctors with credentials fetched successfully", dtoList);
+
+
+            }
+            catch (Exception ex) 
+            { 
+                return new ApiResponse<IEnumerable<DoctorDTO>>(500, ex.Message);
+            }
+
         }
 
         public async Task<ApiResponse<bool>> UpdateDoctorVerificationStatusAsync(DoctorVerificationUpdateDTO dto)
         {
-            var doctorEntity = new Doctors
+            try
             {
-                DoctorId = dto.DoctorId,
-                VerificationStatus = dto.VerificationStatus,
-                ModifiedBy = dto.ModifiedBy,
-                
-            };
- 
-            int rowsAffected = await _doctorRepo.UpdateAsync("SP_DOCTORS", doctorEntity);
+                var doctorEntity = new Doctors
+                {
+                    DoctorId = dto.DoctorId,
+                    VerificationStatus = dto.VerificationStatus,
+                    ModifiedBy = dto.ModifiedBy,
 
-            return new ApiResponse<bool>(
-                 rowsAffected > 0 ? 201 : 400,
-                 rowsAffected > 0 ? "Doctor status updated successfully" : "Failed to update",
-                 rowsAffected > 0
-             );
+                };
+
+                int rowsAffected = await _doctorRepo.UpdateAsync("SP_DOCTORS", doctorEntity);
+
+                return new ApiResponse<bool>(
+                     rowsAffected > 0 ? 201 : 400,
+                     rowsAffected > 0 ? "Doctor status updated successfully" : "Failed to update",
+                     rowsAffected > 0
+                 );
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>(500,ex.Message);
+            }
+            
         }
 
     }
 }
+

@@ -17,7 +17,7 @@ namespace MediCare.Domain.Entities
 
         public string? ProfilePhoto { get; set; }
         public Veri_Status VerificationStatus { get; set; } = Veri_Status.Pending;
-        public bool IsAvailable { get; set; }=false;
+        public bool IsActive { get; set; }=false;
 
     }
 }

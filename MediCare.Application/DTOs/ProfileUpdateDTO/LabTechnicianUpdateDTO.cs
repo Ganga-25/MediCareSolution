@@ -1,8 +1,10 @@
-﻿using MediCare.Domain.Enums;
+﻿using MediCare.Application.DTOs.LabTechnicianDTO;
+using MediCare.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MediCare.Application.DTOs.ProfileUpdateDTO
@@ -17,6 +19,8 @@ namespace MediCare.Application.DTOs.ProfileUpdateDTO
         public string? ProfilePhoto { get; set; }
         public string? VerificationStatus { get; set; }
         public bool IsActive { get; set; }
+        [JsonIgnore(Condition =JsonIgnoreCondition.WhenWritingNull)]
+        public List<LabTechnicianCredentialDTO>? Credentials { get; set; }
     }
     public class LabTechnicianUpdateDTO
     {
@@ -27,5 +31,11 @@ namespace MediCare.Application.DTOs.ProfileUpdateDTO
 
         public string? ProfilePhoto { get; set; }
         
+    }
+    public class UpdateverificationstatusofLabtechDTO
+    {
+        public int LabTechnicianId { get; set; }
+        public Veri_Status VerificationStatus { get; set; }
+     
     }
 }

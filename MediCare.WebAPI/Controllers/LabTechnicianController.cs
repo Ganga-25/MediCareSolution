@@ -24,6 +24,30 @@ namespace MediCare.WebAPI.Controllers
             var result = await _labTechService.RegisterLabTechnicianAsync(labTechDto, userId);
             return StatusCode(result.StatusCode, result);
         }
+        [HttpGet("PendingVerification")]
+        public async Task<IActionResult> GetpendingLabtech()
+        {
+            var result = await _labTechService.GetPendingVerificationLabtech();
+                return StatusCode(result.StatusCode, result);
+        }
+        [HttpPatch("Verify")]
+        public async Task<IActionResult> UpdateVerification([FromBody] UpdateverificationstatusofLabtechDTO dto)
+        {
+            int userId=User.GetUserId();
+            var result = await _labTechService.UpdateLabtechnicianVerficationStatus(dto,userId);
+            return StatusCode(result.StatusCode, result);
+
+
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetLabtechnician()
+        {
+            int userId = User.GetUserId();
+            var result= await _labTechService.GetLabTechByUserIdAsync(userId);
+            return StatusCode(result.StatusCode, result);
+        }
+       
+
     }
 }
 
