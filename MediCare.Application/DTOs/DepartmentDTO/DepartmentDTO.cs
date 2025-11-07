@@ -11,7 +11,9 @@ namespace MediCare.Application.DTOs.DepartmentDTO
         public int DepartmentId { get; set; }
         public string DepartmentName { get; set; } = null!;
         public string Descriptions { get; set; } = string.Empty;
-        public string DepartmentImageUrl { get; set; } = string.Empty;
+        public string? DepartmentImageUrl { get; set; }
+
+        public bool IsActive { get; set; }
 
     }
 }

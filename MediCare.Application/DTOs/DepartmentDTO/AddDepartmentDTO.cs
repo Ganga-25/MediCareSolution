@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,6 @@ namespace MediCare.Application.DTOs.DepartmentDTO
        
         public string DepartmentName { get; set; } 
         public string Descriptions { get; set; } 
-        public string DepartmentImageUrl { get; set; } 
+        public IFormFile? DepartmentImageUrl { get; set; } 
     }
 }

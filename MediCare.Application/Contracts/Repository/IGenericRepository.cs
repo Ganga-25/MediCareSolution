@@ -12,7 +12,7 @@ namespace MediCare.Application.Contracts.Repository
         Task<T?>GetByIdAsync(string spName, string idParameterName, object id);
         Task<int>AddAsync(string spName,T entity);
         Task<int>UpdateAsync(string spName,T entity);
-        Task<int>DeleteAsync(string spName, string idParameterName, object id);
+        Task<int>DeleteAsync(string spName, string idParameterName, object id, object deletedBy);
 
     }
 }

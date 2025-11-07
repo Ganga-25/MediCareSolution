@@ -63,13 +63,14 @@ namespace MediCare.Infrastructure
         });
     }
 
-    public Task<int> DeleteAsync(string spName, string idParameterName, object id)
+    public Task<int> DeleteAsync(string spName, string idParameterName, object id, object deletedBy)
     {
         return WithConnection(async conn =>
         {
             var parameters = new DynamicParameters();
             parameters.Add("@FLAG", "DELETE");
             parameters.Add(idParameterName, id);
+            parameters.Add("@DELETEDBY", deletedBy);
             return await conn.ExecuteAsync(spName, parameters, commandType: CommandType.StoredProcedure);
         });
     }
@@ -82,8 +83,8 @@ namespace MediCare.Infrastructure
             // Properties to exclude (from BaseEntity)
             var excludedProperties = new HashSet<string>
             {
-                "CreatedOn", "CreatedBy", "ModifiedAt", "ModifiedBy",
-                "DeletedOn", "DeletedBy", "IsDeleted"
+                "CreatedOn", "ModifiedAt", 
+                "DeletedOn",  "IsDeleted"
             };
 
             foreach (var prop in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))

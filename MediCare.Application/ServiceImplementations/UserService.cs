@@ -58,17 +58,7 @@ namespace MediCare.Application.ServiceImplementations
 
             await _userRepo.AddAsync("Users", newUser);
 
-            //var insertedUser = (await _userRepo.GetAllAsync("Users"))
-            //                    .First(u => u.UserEmail == request.UserEmail);
-
-
-            //var newPatient = new Patients
-            //{
-            //    UserId = insertedUser.UserId,
-            //    UHID = GenerateUHID()
-            //};
-
-            //await _patientRepo.AddAsync("SP_Patients", newPatient);
+          
 
             return new AuthResponse(201, "User registered successfully");
         }

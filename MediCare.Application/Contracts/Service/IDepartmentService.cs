@@ -10,7 +10,13 @@ namespace MediCare.Application.Contracts.Service
 {
     public interface IDepartmentService
     {
-        Task<ApiResponse<IEnumerable<DepartmentDTO>>> GetAllDepartmentAsync();
+        Task<ApiResponse<IEnumerable<DepartmentDTO>>> GetAllDepartmentAsync(string role);
+        Task<ApiResponse<DepartmentDTO>>GetDepartmentById(int id);
+        
         Task<ApiResponse<bool>>AddDepartmentAsync( AddDepartmentDTO addDepartment);
+        Task<ApiResponse<string>> UpdateDepartment( UpdateDepartmentDTO updateDepartment,int userId);
+        Task<ApiResponse<string>> DeleteDepartmentAsync(int departmentId,int userId);
+        Task<ApiResponse<string>> ActivateandDeactivateDepartment(int departmentId,int userId);
+
     }
 }

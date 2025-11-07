@@ -12,5 +12,6 @@ namespace MediCare.Domain.Entities
         public string DepartmentName { get; set; } = null!;
         public string Descriptions { get; set; }= string.Empty;
         public string DepartmentImageUrl { get; set; }=string.Empty;
+        public bool IsActive { get; set; } = true;
     }
 }

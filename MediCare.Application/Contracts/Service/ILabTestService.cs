@@ -10,9 +10,12 @@ namespace MediCare.Application.Contracts.Service
 {
     public interface ILabTestService
     {
-        Task<ApiResponse<IEnumerable<LabTestDTO>>> GetAllLabTestsAsync();
+        Task<ApiResponse<IEnumerable<LabTestDTO>>> GetAllLabTestsAsync(string? role);
         Task<ApiResponse<LabTestDTO>> GetLabTestByIdAsync(int labTestId);
-        Task<ApiResponse<bool>> AddLabTestAsync(AddLabTestDTO dto);
-        Task<ApiResponse<bool>> DeleteLabTestAsync(int labTestId, int deletedBy);
+        Task<ApiResponse<string>> AddLabTestAsync(AddLabTestDTO dto);
+        Task<ApiResponse<string>> UpdateLabTest(UpdateLabTestDTO testDTO, int userid);
+        Task<ApiResponse<string>> ActivateorDeactivaeLabtest(int labtestid,int userid);
+      
+        
     }
 }

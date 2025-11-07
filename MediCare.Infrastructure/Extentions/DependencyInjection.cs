@@ -3,6 +3,7 @@ using MediCare.Application.Contracts;
 using MediCare.Application.Contracts.Repository;
 using MediCare.Application.Contracts.Service;
 using MediCare.Application.ServiceImplementations;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -31,6 +32,7 @@ namespace MediCare.Infrastructure.Extentions
             service.AddScoped<IPrescriptionService,PrescriptionService>();
             service.AddScoped<IPatientLabTestService, PatientLabTestService>();
             service.AddScoped<ILabTechnicianCredentialService,LabTechnicianCredentialService>();
+            service.AddScoped<CloudinaryService>();
 
 
             return service;
