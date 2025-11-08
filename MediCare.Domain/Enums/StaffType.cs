@@ -9,6 +9,6 @@ namespace MediCare.Domain.Enums
     public enum StaffType
     {
         Doctor=0,
-        LabTechnicia=1
+        LabTechnician=1
     }
 }

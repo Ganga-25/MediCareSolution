@@ -23,7 +23,7 @@ namespace MediCare.Application.DTOs.AvailabilityDTO
     }
     public class StaffAvailabilityCreateUpdateDTO
     {
-       
+        public int? StaffId { get; set; }
         public DateTime Date { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }

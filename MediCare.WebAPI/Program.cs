@@ -1,6 +1,6 @@
-
 using MediCare.Application;
 using MediCare.Infrastructure.Extentions;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
@@ -16,13 +16,14 @@ namespace MediCare.WebAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
+            // ? Database connection
             builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection
-                                                          (builder.Configuration.GetConnectionString("defaultconnection")));
+                (builder.Configuration.GetConnectionString("defaultconnection")));
+
+            // ? Application Services
             builder.Services.AddMediCareServices();
 
-
+            // ? Authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -42,9 +43,12 @@ namespace MediCare.WebAPI
 
             builder.Services.AddControllers();
 
-            builder.Services.AddSwaggerGen(options =>
+            // ? Swagger setup (single, combined configuration)
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
             {
-                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                // ?? JWT Authorization support
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
                     Type = SecuritySchemeType.ApiKey,
@@ -54,28 +58,28 @@ namespace MediCare.WebAPI
                     Description = "Please enter a valid JWT token"
                 });
 
-                options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] { }
-        }
-    });
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+
+                // ?? File upload support
+                
             });
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // ? Middleware pipeline
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -84,8 +88,8 @@ namespace MediCare.WebAPI
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication(); // ? Added this for JWT
             app.UseAuthorization();
-
 
             app.MapControllers();
 

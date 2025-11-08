@@ -73,45 +73,60 @@ namespace MediCare.Application.ServiceImplementations
         {
             try
             {
-                int staffId=0;
-                StaffType staffType=StaffType.Doctor;
+                int staffId = 0;
+                StaffType staffType = StaffType.Doctor;
 
                 if (role == "Doctor")
                 {
+                    // ✅ Doctor adds their own availability
                     var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
                     var doctor = doctors.SingleOrDefault(x => x.UserId == currentUserId);
-                    if (doctor == null) return new ApiResponse<bool>(404, "Doctor not found");
+                    if (doctor == null)
+                        return new ApiResponse<bool>(404, "Doctor not found");
 
-                    staffId = doctor.DoctorId;
+                    staffId = currentUserId;
                     staffType = StaffType.Doctor;
-
-                }else if(role == "Labtechnician")
+                }
+                else if (role == "Admin")
                 {
+                    // ✅ Admin adds availability for Lab Technicians
+                    if (dto is null || dto.SlotList == null)
+                        return new ApiResponse<bool>(400, "Invalid input data");
 
-                    var LabTechnicians = await _LabtechRepo.GetAllAsync("SP_LABTECH");
-                    var labtech = LabTechnicians.FirstOrDefault(x => x.UserId == currentUserId);
-                    if (labtech == null) return new ApiResponse<bool>(404, "Labtechnician not found");
+                    // Get the LabTechnicianId from DTO (must be passed from frontend)
+                    // Example: dto.StaffId = lab technician's user id
+                    staffId = dto.StaffId ?? 0;
+                    if (staffId == 0)
+                        return new ApiResponse<bool>(400, "Lab technician StaffId is required");
 
-                    staffId = labtech.LabTechnicianId;
-                    staffType = StaffType.LabTechnicia;
+                    // Validate that this StaffId belongs to a lab technician
+                    var labtechs = await _LabtechRepo.GetAllAsync("SP_LABTECH");
+                    var labtech = labtechs.FirstOrDefault(x => x.UserId == staffId);
+                    if (labtech == null)
+                        return new ApiResponse<bool>(404, "Lab technician not found");
 
+                    staffType = StaffType.LabTechnician;
+                }
+                else
+                {
+                    return new ApiResponse<bool>(403, "You are not authorized to add staff availability");
                 }
 
-                    var newStaff = new StaffAvailability
-                    {
-                        StaffType =staffType,
-                        StaffId = staffId,
-                        Date = dto.Date,
-                        StartTime = dto.StartTime,
-                        EndTime = dto.EndTime,
-                        SlotDuration = dto.SlotDuration,
-                        Mode = dto.Mode,
-                        SlotList = dto.SlotList,
-                        Session = dto.Session,
-                        AvailableSlots = dto.AvailableSlots
-                    };
+                // ✅ Create new record
+                var newStaff = new StaffAvailability
+                {
+                    StaffType = staffType,
+                    StaffId = staffId,
+                    Date = dto.Date,
+                    StartTime = dto.StartTime,
+                    EndTime = dto.EndTime,
+                    SlotDuration = dto.SlotDuration,
+                    Mode = dto.Mode,
+                    SlotList = dto.SlotList,
+                    Session = dto.Session,
+                    AvailableSlots = dto.AvailableSlots
+                };
 
-                
                 var result = await _repository.AddAsync("SP_STAFF_AVAILABILITY", newStaff);
 
                 return new ApiResponse<bool>(
@@ -119,16 +134,13 @@ namespace MediCare.Application.ServiceImplementations
                     message: result > 0 ? "Staff availability added successfully" : "Failed to add staff availability",
                     data: result > 0
                 );
-
-
             }
             catch (Exception ex)
             {
-                 return new ApiResponse<bool>(500,ex.Message);
+                return new ApiResponse<bool>(500, ex.Message);
             }
-
-
         }
+
 
 
         public async Task<ApiResponse<bool>> UpdateAsync(int id, StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
@@ -144,7 +156,7 @@ namespace MediCare.Application.ServiceImplementations
                     var doctor = doctors.SingleOrDefault(x => x.UserId == currentUserId);
                     if (doctor == null) return new ApiResponse<bool>(404, "Doctor not found");
 
-                    staffId = doctor.DoctorId;
+                    staffId = doctor.UserId;
                     staffType = StaffType.Doctor;
 
                 }
@@ -155,8 +167,8 @@ namespace MediCare.Application.ServiceImplementations
                     var labtech = LabTechnicians.FirstOrDefault(x => x.UserId == currentUserId);
                     if (labtech == null) return new ApiResponse<bool>(404, "Labtechnician not found");
 
-                    staffId = labtech.LabTechnicianId;
-                    staffType = StaffType.LabTechnicia;
+                    staffId = labtech.UserId;
+                    staffType = StaffType.LabTechnician;
 
                 }
                 var entity = new StaffAvailability

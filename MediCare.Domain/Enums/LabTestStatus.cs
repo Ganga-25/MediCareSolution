@@ -8,9 +8,10 @@ namespace MediCare.Domain.Enums
 {
     public enum LabTestStatus
     {
-        Pending=0,
-        InProgress=1,
-        Completed=2,
-        Cancelled=3
+        Completed = 0,
+        Cancelled = 1,
+        Scheduled=2,
+        Pending=3
+
     }
 }

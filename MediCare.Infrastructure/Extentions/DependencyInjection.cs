@@ -33,6 +33,8 @@ namespace MediCare.Infrastructure.Extentions
             service.AddScoped<IPatientLabTestService, PatientLabTestService>();
             service.AddScoped<ILabTechnicianCredentialService,LabTechnicianCredentialService>();
             service.AddScoped<CloudinaryService>();
+            service.AddScoped<ILabtestBookingService, LabTestBookingService>();
+            service.AddScoped<ILabtestAnalyserService, LabtestAnalyserService>();
 
 
             return service;

@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace MediCare.Domain.Enums
 {
-    public enum PaymentMethod
+   public enum PaymentMethod
     {
-        Cash=0,
-        Card=1,
-        UPI=2
+        Refund=0,
+        Failed=1,
+        Success=2,
+        Pending=3
     }
 }
