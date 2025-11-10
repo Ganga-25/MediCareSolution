@@ -1,53 +1,59 @@
-﻿using MediCare.Application.DTOs.LabTestDTO;
+﻿using MediCare.Application.Contracts.Service;
+using MediCare.Application.DTOs.LabTestDTO;
+using MediCare.Application.ServiceImplementations.TestAnalyzers;
 using Microsoft.AspNetCore.Http;
 using UglyToad.PdfPig;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MediCare.Application.Contracts.Service;
 
 namespace MediCare.Application.ServiceImplementations
 {
-    
-    
-        public class LabtestAnalyserService:ILabtestAnalyserService
+    public class LabtestAnalyserService : ILabtestAnalyserService
+    {
+        private readonly List<ITestAnalyzer> _analyzers;
+
+        public LabtestAnalyserService()
         {
-            public async Task<LabTestAnalysisResponseDTO> AnalyzeLabReportAsync(IFormFile file)
+            _analyzers = new List<ITestAnalyzer>
             {
-                string text = string.Empty;
+                new BloodSugarAnalyzer(),
+                // Add more analyzers here later
+                // new LiverFunctionAnalyzer(),
+                // new ThyroidAnalyzer()
+            };
+        }
 
-                using (var memoryStream = new MemoryStream())
+        public async Task<LabTestAnalysisResponseDTO> AnalyzeLabReportAsync(IFormFile file)
+        {
+            string text = string.Empty;
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                using (var pdf = PdfDocument.Open(memoryStream))
                 {
-                    await file.CopyToAsync(memoryStream);
-                    memoryStream.Position = 0;
-
-                    using (var pdf = PdfDocument.Open(memoryStream))
+                    foreach (var page in pdf.GetPages())
                     {
-                        foreach (var page in pdf.GetPages())
-                        {
-                            text += page.Text + "\n";
-                        }
+                        text += page.Text + "\n";
                     }
                 }
-
-                // Very basic example logic — you can expand this.
-                bool abnormal = text.Contains("High", StringComparison.OrdinalIgnoreCase) ||
-                                text.Contains("Low", StringComparison.OrdinalIgnoreCase) ||
-                                text.Contains("Abnormal", StringComparison.OrdinalIgnoreCase);
-
-                string tips = abnormal
-                    ? "Some readings seem abnormal. Please consult your doctor and stay hydrated."
-                    : "All parameters appear within normal range. Keep up your healthy lifestyle!";
-
-                return new LabTestAnalysisResponseDTO
-                {
-                    Summary = "Lab test analyzed successfully.",
-                    IsAbnormal = abnormal,
-                    Suggestions = tips
-                };
             }
+
+            // Try to detect the right analyzer
+            var analyzer = _analyzers.FirstOrDefault(a => a.CanAnalyze(text));
+
+            if (analyzer != null)
+            {
+                return analyzer.Analyze(text);
+            }
+
+            // Default if no analyzer matches
+            return new LabTestAnalysisResponseDTO
+            {
+                Summary = "Unknown report type.",
+                IsAbnormal = false,
+                Suggestions = "Please upload a supported lab test (e.g., Blood Sugar, Liver, Thyroid)."
+            };
         }
-    
+    }
 }

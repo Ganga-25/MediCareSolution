@@ -19,7 +19,7 @@ namespace MediCare.Application.Contracts.Service
         Task<ApiResponse<bool>> RegisterDoctorAsync( DoctorUpdateDTO Docdto, int userId);
         Task<ApiResponse<IEnumerable<DoctorDTO>>> GetDoctorsByDepartmentAsync(int departmentId);
         Task<ApiResponse<IEnumerable<DoctorDTO>>> GetPendingDoctorsAsync();
-        Task<ApiResponse<bool>> UpdateDoctorVerificationStatusAsync(DoctorVerificationUpdateDTO dto);
+        Task<ApiResponse<bool>> UpdateDoctorVerificationStatusAsync(DoctorVerificationUpdateDTO dto, int userId);
 
 
     }

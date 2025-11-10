@@ -37,39 +37,49 @@ namespace MediCare.WebAPI.Controllers
         }
 
         // ✅ POST: api/StaffAvailability
-        [HttpPost]
+        [HttpPost("Doctors")]
         /*[Authorize(Roles = "Doctor,Admin")]*/ // restrict if needed
-        public async Task<IActionResult> Add([FromBody] StaffAvailabilityCreateUpdateDTO dto)
+        public async Task<IActionResult> AddDoctor([FromBody] StaffAvailabilityCreateUpdateDTO dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new ApiResponse<string>(400, "Invalid data"));
 
             // Get current user info from JWT token
-            var currentUserId = User.GetUserId();
-            var role = User.GetUserRole();
+            int currentUserId = User.GetUserId();
+            string role = User.GetUserRole();
 
-            var response = await _staffAvaiService.AddAsync(dto, currentUserId, role);
+            var response = await _staffAvaiService.AddDoctorAvailability(dto, currentUserId, role);
             return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpPost("Labtechnician")]
+        public async Task<IActionResult> Addlabtecnician([FromBody] StaffAvailabilityCreateUpdateDTO dto)
+        {
+            int  currentUserId = User.GetUserId();
+            string role = User.GetUserRole();
+            var response= await _staffAvaiService.AddLabtechnicianAvailability(dto, currentUserId, role);
+            return StatusCode(response.StatusCode, response);
+
         }
 
         // ✅ PUT: api/StaffAvailability/{id}
         [HttpPut("{id}")]
         
-        public async Task<IActionResult> Update(int id, [FromBody] StaffAvailabilityCreateUpdateDTO dto)
+        public async Task<IActionResult> Update([FromBody] StaffAvailabilityCreateUpdateDTO dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new ApiResponse<string>(400, "Invalid data"));
 
-            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-            var role = User.FindFirstValue(ClaimTypes.Role) ?? "Doctor";
-
-            var response = await _staffAvaiService.UpdateAsync(id, dto, currentUserId, role);
+            var role = User.GetUserRole();
+            var id=User.GetUserId();
+            var response = await _staffAvaiService.UpdateAsync(dto, id,role);
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpGet("staff/{staffId}")]
-        public async Task<IActionResult> GetByStaffId(int staffId)
+        [HttpGet("staffId")]
+        public async Task<IActionResult> GetByStaffId()
         {
+            var staffId=User.GetUserId();
             var response = await _staffAvaiService.GetByStaffIdAsync(staffId);
             return StatusCode(response.StatusCode, response);
         }

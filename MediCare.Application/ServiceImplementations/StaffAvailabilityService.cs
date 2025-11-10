@@ -27,49 +27,70 @@ namespace MediCare.Application.ServiceImplementations
 
         public async Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetAllAsync()
         {
-            var result = await _repository.GetAllAsync("SP_STAFF_AVAILABILITY");
-            //return result.Select(x => MapToDto(x));
-            var Staffs = result.Select(x => new StaffAvailabilityDTO
+            try
             {
-                Id = x.Id,
-                StaffType = x.StaffType,
-                StaffId = x.StaffId,
-                Date = x.Date,
-                StartTime = x.StartTime,
-                EndTime = x.EndTime,
-                SlotDuration = x.SlotDuration,
-                Mode = x.Mode,
-                SlotList = x.SlotList,
-                Session = x.Session,
-                AvailableSlots = x.AvailableSlots
-            }).ToList();
-            return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(200, "DoctorAvailability Fetched Successfully", Staffs);
+                var result = await _repository.GetAllAsync("SP_STAFF_AVAILABILITY");
+                
+                var Staffs = result.Select(x => new StaffAvailabilityDTO
+                {
+                    Id = x.Id,
+                    StaffType = x.StaffType,
+                    StaffId = x.StaffId,
+                    Date = x.Date,
+                    StartTime = x.StartTime,
+                    EndTime = x.EndTime,
+                    SlotDuration = x.SlotDuration,
+                    Mode = x.Mode,
+                    SlotList = x.SlotList,
+                    Session = x.Session,
+                    AvailableSlots = x.AvailableSlots
+                }).ToList();
+
+                return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(200, "DoctorAvailability Fetched Successfully", Staffs);
+
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(500, ex.Message);
+            }
+           
 
         }
 
-        public async Task<ApiResponse<StaffAvailabilityDTO>> GetByIdAsync(int id)
+        public async Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetByIdAsync(int id)
         {
-            var entity = await _repository.GetByIdAsync("SP_STAFF_AVAILABILITY", "@ID", id);
-            var Staff = new StaffAvailabilityDTO
+            try
             {
-                Id = entity.Id,
-                StaffType = entity.StaffType,
-                StaffId = entity.StaffId,
-                Date = entity.Date,
-                StartTime = entity.StartTime,
-                EndTime = entity.EndTime,
-                SlotDuration = entity.SlotDuration,
-                Mode = entity.Mode,
-                SlotList = entity.SlotList,
-                Session = entity.Session,
-                AvailableSlots = entity.AvailableSlots
+                var entity = (await _repository.GetAllAsync("SP_STAFF_AVAILABILITY")).Where(s => s.StaffId == id);
+                var Staff = entity.Select(s => new StaffAvailabilityDTO
+                {
+                    Id = s.Id,
+                    StaffType = s.StaffType,
+                    StaffId = s.StaffId,
+                    Date = s.Date,
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
+                    SlotDuration = s.SlotDuration,
+                    Mode = s.Mode,
+                    SlotList = s.SlotList,
+                    Session = s.Session,
+                    AvailableSlots = s.AvailableSlots
 
-            };
-            return new ApiResponse<StaffAvailabilityDTO>(200, "Slots for doctor identified", Staff);
+                }).ToList();
+
+                return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(200, "Slots for doctor identified", Staff);
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(500, ex.Message);
+            }
+           
 
         }
 
-        public async Task<ApiResponse<bool>> AddAsync(StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
+        public async Task<ApiResponse<bool>> AddDoctorAvailability(StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
         {
             try
             {
@@ -87,39 +108,31 @@ namespace MediCare.Application.ServiceImplementations
                     staffId = currentUserId;
                     staffType = StaffType.Doctor;
                 }
-                else if (role == "Admin")
-                {
-                    // ✅ Admin adds availability for Lab Technicians
-                    if (dto is null || dto.SlotList == null)
-                        return new ApiResponse<bool>(400, "Invalid input data");
-
-                    // Get the LabTechnicianId from DTO (must be passed from frontend)
-                    // Example: dto.StaffId = lab technician's user id
-                    staffId = dto.StaffId ?? 0;
-                    if (staffId == 0)
-                        return new ApiResponse<bool>(400, "Lab technician StaffId is required");
-
-                    // Validate that this StaffId belongs to a lab technician
-                    var labtechs = await _LabtechRepo.GetAllAsync("SP_LABTECH");
-                    var labtech = labtechs.FirstOrDefault(x => x.UserId == staffId);
-                    if (labtech == null)
-                        return new ApiResponse<bool>(404, "Lab technician not found");
-
-                    staffType = StaffType.LabTechnician;
-                }
+              
                 else
                 {
                     return new ApiResponse<bool>(403, "You are not authorized to add staff availability");
                 }
 
+                TimeSpan startTime, endTime;
+                try
+                {
+                    startTime = DateTime.ParseExact(dto.StartTime.ToString(), "hh:mm tt", null).TimeOfDay;
+                    endTime=DateTime.ParseExact(dto.EndTime.ToString(), "hh:mm tt",null).TimeOfDay;
+
+                }
+                catch
+                {
+                    return new ApiResponse<bool>(400, "Invalid appointment time format. Use 'hh:mm tt' (e.g. 06:30 PM).");
+                }
                 // ✅ Create new record
                 var newStaff = new StaffAvailability
                 {
                     StaffType = staffType,
                     StaffId = staffId,
                     Date = dto.Date,
-                    StartTime = dto.StartTime,
-                    EndTime = dto.EndTime,
+                    StartTime = startTime,
+                    EndTime = endTime,
                     SlotDuration = dto.SlotDuration,
                     Mode = dto.Mode,
                     SlotList = dto.SlotList,
@@ -141,9 +154,57 @@ namespace MediCare.Application.ServiceImplementations
             }
         }
 
+        public async Task<ApiResponse<bool>> AddLabtechnicianAvailability(StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
+        {
+            try
+            {
+                if (dto.StaffId == null || dto.StaffId == 0)
+                    return new ApiResponse<bool>(400, "Lab technician StaffId is required");
+
+                var labtech = (await _LabtechRepo.GetAllAsync("SP_LABTECH"))
+                              .FirstOrDefault(x => x.UserId == dto.StaffId);
+                if (labtech == null)
+                    return new ApiResponse<bool>(404, "Lab technician not found");
+
+                TimeSpan startTime, endTime;
+                try
+                {
+                    startTime = DateTime.ParseExact(dto.StartTime.ToString(), "hh:mm tt", null).TimeOfDay;
+                    endTime = DateTime.ParseExact(dto.EndTime.ToString(), "hh:mm tt", null).TimeOfDay;
+
+                }
+                catch
+                {
+                    return new ApiResponse<bool>(400, "Invalid appointment time format. Use 'hh:mm tt' (e.g. 06:30 PM).");
+                }
+
+                var entity = new StaffAvailability
+                {
+                    StaffType = StaffType.LabTechnician,
+                    StaffId = dto.StaffId.Value,
+                    Date = dto.Date,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    SlotDuration = dto.SlotDuration,
+                    Mode = dto.Mode,
+                    SlotList = dto.SlotList,
+                    Session = dto.Session,
+                    AvailableSlots = dto.AvailableSlots,
+                    CreatedBy = role
+                };
+
+                var result = await _repository.AddAsync("SP_STAFF_AVAILABILITY", entity);
+                return new ApiResponse<bool>(result > 0 ? 200 : 400, result > 0 ? "Lab technician availability added" : "Failed");
 
 
-        public async Task<ApiResponse<bool>> UpdateAsync(int id, StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>(500, ex.Message);
+            }
+        }
+
+        public async Task<ApiResponse<bool>> UpdateAsync(StaffAvailabilityCreateUpdateDTO dto, int id, string role)
         {
             try
             {
@@ -153,37 +214,38 @@ namespace MediCare.Application.ServiceImplementations
                 if (role == "Doctor")
                 {
                     var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
-                    var doctor = doctors.SingleOrDefault(x => x.UserId == currentUserId);
+                    var doctor = doctors.SingleOrDefault(x => x.UserId == id);
                     if (doctor == null) return new ApiResponse<bool>(404, "Doctor not found");
 
                     staffId = doctor.UserId;
                     staffType = StaffType.Doctor;
 
                 }
-                else if (role == "Labtechnician")
+               
+                TimeSpan startTime, endTime;
+                try
                 {
+                    startTime = DateTime.ParseExact(dto.StartTime.ToString(), "hh:mm tt", null).TimeOfDay;
+                    endTime = DateTime.ParseExact(dto.EndTime.ToString(), "hh:mm tt", null).TimeOfDay;
 
-                    var LabTechnicians = await _LabtechRepo.GetAllAsync("SP_LABTECH");
-                    var labtech = LabTechnicians.FirstOrDefault(x => x.UserId == currentUserId);
-                    if (labtech == null) return new ApiResponse<bool>(404, "Labtechnician not found");
-
-                    staffId = labtech.UserId;
-                    staffType = StaffType.LabTechnician;
-
+                }
+                catch
+                {
+                    return new ApiResponse<bool>(400, "Invalid appointment time format. Use 'hh:mm tt' (e.g. 06:30 PM).");
                 }
                 var entity = new StaffAvailability
                 {
                     StaffId = staffId,
                     StaffType = staffType,
                     Date = dto.Date,
-                    StartTime = dto.StartTime,
-                    EndTime = dto.EndTime,
+                    StartTime = startTime,
+                    EndTime = endTime,
                     AvailableSlots = dto.AvailableSlots,
                     SlotDuration = dto.SlotDuration,
                     Mode = dto.Mode,
                     Session = dto.Session,
                     SlotList = dto.SlotList,
-                    ModifiedBy=currentUserId
+                    ModifiedBy=id
                     
 
                 };
@@ -206,24 +268,34 @@ namespace MediCare.Application.ServiceImplementations
    
         public async Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetByStaffIdAsync(int staffId)
         {
-            var result = (await _repository.GetAllAsync("SP_STAFF_AVAILABILITY"))
-                                   .Where(x => x.StaffId == staffId);
-            var staffAvailabilityList = result.Select(x => new StaffAvailabilityDTO
+            try
             {
-                Id = x.Id,
-                StaffType = x.StaffType,
-                StaffId = x.StaffId,
-                Date = x.Date,
-                StartTime = x.StartTime,
-                EndTime = x.EndTime,
-                AvailableSlots = x.AvailableSlots,
-                SlotDuration = x.SlotDuration,
-                Mode = x.Mode,
-                Session = x.Session,
-                SlotList = x.SlotList
-            }).ToList();
-            return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(200, "Doctor Availability Fetched Successfully.", staffAvailabilityList);
+                var result = (await _repository.GetAllAsync("SP_STAFF_AVAILABILITY"))
+                               .Where(x => x.StaffId == staffId);
+                var staffAvailabilityList = result.Select(x => new StaffAvailabilityDTO
+                {
+                    Id = x.Id,
+                    StaffType = x.StaffType,
+                    StaffId = x.StaffId,
+                    Date = x.Date,
+                    StartTime = x.StartTime,
+                    EndTime = x.EndTime,
+                    AvailableSlots = x.AvailableSlots,
+                    SlotDuration = x.SlotDuration,
+                    Mode = x.Mode,
+                    Session = x.Session,
+                    SlotList = x.SlotList
+                }).ToList();
+                return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(200, "Doctor Availability Fetched Successfully.", staffAvailabilityList);
 
+
+            }
+            catch (Exception ex)
+            {
+                 return new ApiResponse<IEnumerable<StaffAvailabilityDTO>>(500, ex.Message);
+
+            }
+        
         }
     }
 }

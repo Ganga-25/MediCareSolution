@@ -26,7 +26,7 @@ namespace MediCare.WebAPI.Controllers
         }
 
         // GET: api/DoctorCredential/5
-        [HttpGet("{id:int}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var response = await _DocCredService.GetByIdAsync(id);
@@ -52,8 +52,7 @@ namespace MediCare.WebAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (id != dto.Id)
-                return BadRequest(new { Message = "Id in URL and payload do not match" });
+            
 
             var response = await _DocCredService.UpdateAsync(dto);
             return StatusCode(response.StatusCode, response);

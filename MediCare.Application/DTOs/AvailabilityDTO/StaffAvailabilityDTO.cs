@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MediCare.Application.DTOs.AvailabilityDTO
@@ -25,8 +26,10 @@ namespace MediCare.Application.DTOs.AvailabilityDTO
     {
         public int? StaffId { get; set; }
         public DateTime Date { get; set; }
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
+        
+        public string StartTime { get; set; }
+        
+        public string EndTime { get; set; }
         public int AvailableSlots { get; set; }
         public int? SlotDuration { get; set; }
         public Mode? Mode { get; set; }

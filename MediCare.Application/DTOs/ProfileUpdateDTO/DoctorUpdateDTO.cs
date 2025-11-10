@@ -38,6 +38,6 @@ namespace MediCare.Application.DTOs.ProfileUpdateDTO
     {
         public int DoctorId { get; set; }
         public Veri_Status VerificationStatus { get; set; } // "Verified" or "Rejected"
-        public int ModifiedBy { get; set; } // set from JWT in service/controller
+       
     }
 }

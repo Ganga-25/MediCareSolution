@@ -29,7 +29,7 @@ namespace MediCare.Application.ServiceImplementations
 
         public async Task<ApiResponse<LabTechnicianDTO>> GetLabTechByUserIdAsync(int userId)
         {
-            var LabTechs = (await _LabTechnicianRepo.GetAllAsync("Users"))
+            var LabTechs = (await _LabTechnicianRepo.GetAllAsync("SP_LABTECH"))
                                    .SingleOrDefault(x => x.UserId == userId);
             if (LabTechs == null)
                 return new ApiResponse<LabTechnicianDTO>(404, $"LabTechnician with this id :{userId} not found. ");
@@ -37,7 +37,7 @@ namespace MediCare.Application.ServiceImplementations
             var dto = new LabTechnicianDTO
             {
                 LabTechnicianId = LabTechs.LabTechnicianId,
-                UserId = LabTechs.UserId,
+                UserId = userId,
                 DepartmentId = LabTechs.DepartmentId,
                 LicenceNumber = LabTechs.LicenceNumber,
                 ContactNumber = LabTechs.ContactNumber,
@@ -136,7 +136,8 @@ namespace MediCare.Application.ServiceImplementations
                 var labtechnicians = await _LabTechnicianRepo.GetByIdAsync("SP_LABTECH", "LABTECHNICIANID", dto.LabTechnicianId);
                 if (labtechnicians == null) return new ApiResponse<string>(404, "Invalid labtechnicianId");
 
-                var labtechniciancredentials = await _labtechCredRepo.GetByIdAsync("SP_LABTECH_CREDENTIALS", "LABTECHNICIANID", dto.LabTechnicianId);
+                var labtechniciancredentials = (await _labtechCredRepo.GetAllAsync("SP_LABTECH_CREDENTIALS")).Where(l=>l.LabTechnicianId==dto.LabTechnicianId);
+                if (labtechniciancredentials == null) return new ApiResponse<string>(404, "Labtechnician have no credentials.");
 
                     var Labtechentity = new LabTechnicians
                     {

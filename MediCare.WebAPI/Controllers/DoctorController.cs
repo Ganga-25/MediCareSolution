@@ -26,7 +26,7 @@ namespace MediCare.WebAPI.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ GET: api/doctors/{id}
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -40,8 +40,6 @@ namespace MediCare.WebAPI.Controllers
           
            int  userId = User.GetUserId();
             var result = await _doctorService.RegisterDoctorAsync(Docdto, userId);
-
-            // 3️⃣ Return appropriate HTTP status code and response
             return StatusCode(result.StatusCode, result);
         }
 
@@ -60,29 +58,12 @@ namespace MediCare.WebAPI.Controllers
         }
 
 
-        [HttpPut("verify/{doctorId}")]
-        public async Task<IActionResult> VerifyDoctor(int doctorId, [FromBody] string status)
+        [HttpPut("verify")]
+        public async Task<IActionResult> VerifyDoctor(DoctorVerificationUpdateDTO dto)
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized(new { message = "UserId not found in token" });
+          int userId= User.GetUserId();
 
-            if (!int.TryParse(userIdClaim, out int userId))
-                return BadRequest(new { message = "Invalid UserId in token" });
-
-            // ✅ Convert string to enum safely
-            if (!Enum.TryParse<Veri_Status>(status, true, out var verificationStatusEnum))
-                return BadRequest(new { message = "Invalid verification status value" });
-
-            // ✅ Build DTO here
-            var dto = new DoctorVerificationUpdateDTO
-            {
-                DoctorId = doctorId,
-                VerificationStatus = verificationStatusEnum,
-                ModifiedBy = userId
-            };
-
-            var response = await _doctorService.UpdateDoctorVerificationStatusAsync(dto);
+            var response = await _doctorService.UpdateDoctorVerificationStatusAsync(dto,userId);
 
             return StatusCode(response.StatusCode, response);
         }

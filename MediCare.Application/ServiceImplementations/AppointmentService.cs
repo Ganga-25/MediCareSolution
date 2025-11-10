@@ -33,99 +33,129 @@ namespace MediCare.Application.ServiceImplementations
 
         public async Task<ApiResponse<string>> BookAppointmentAsync(AppointmentDTO dto, int userId)
         {
-            // 🔹 Step 1: Validate doctor
-            var patients = await _patientRepo.GetAllAsync("SP_Patients");
-            var patient = patients.SingleOrDefault(p => p.UserId == userId);
-            if (patient == null) return new ApiResponse<string>(404, "Patient not found");
-
-
-            var doctor = await _doctorRepo.GetByIdAsync("SP_DOCTORS", "@DOCTORID", dto.DoctorId);
-            if (doctor == null)
-                return new ApiResponse<string>(404, "Doctor not found.");
-
-
-            var allAvailabilities = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
-            var doctorAvailabilities = allAvailabilities
-                .Where(a => a.StaffId == doctor.DoctorId && a.Date.Date == dto.AppointmentDate.Date)
-                .ToList();
-
-            if (doctorAvailabilities.Count == 0)
-                return new ApiResponse<string>(400, "No availability found for the selected doctor/date.");
-
-
-            var doctorAvailability = doctorAvailabilities.FirstOrDefault(a =>
-                !string.IsNullOrEmpty(a.SlotList) &&
-                a.SlotList.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                          .Select(s => s.Trim())
-                          .Contains(dto.AppointmentTime.ToString(), StringComparer.OrdinalIgnoreCase));
-
-            if (doctorAvailability == null)
-                return new ApiResponse<string>(400, "Invalid slot. Doctor not available at that time.");
-
-
-            var allAppointments = await _appointmentRepo.GetAllAsync("SP_APPOINTMENT");
-
-
-            TimeSpan parsedTime;
             try
             {
-                parsedTime = DateTime.ParseExact(dto.AppointmentTime.ToString(), "hh:mm tt", null).TimeOfDay;
+                // 🔹 Step 1: Validate patient
+                var patients = await _patientRepo.GetAllAsync("SP_Patients");
+                var patient = patients.SingleOrDefault(p => p.UserId == userId);
+                if (patient == null)
+                    return new ApiResponse<string>(404, "Patient not found.");
+
+                // 🔹 Step 2: Get doctor by UserId (NOT DoctorId)
+                var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+                var doctor = doctors.FirstOrDefault(d => d.DoctorId == dto.DoctorId); // dto.DoctorId is actually UserId
+                if (doctor == null)
+                    return new ApiResponse<string>(404, "Doctor not found.");
+
+                // 🔹 Step 3: Fetch doctor availability for selected date
+                var allAvailabilities = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
+                var doctorAvailabilities = allAvailabilities
+                    .Where(a => a.StaffId == doctor.UserId && a.Date.Date == dto.AppointmentDate.Date)
+                    .ToList();
+
+                if (doctorAvailabilities.Count == 0)
+                    return new ApiResponse<string>(400, "No availability found for the selected doctor/date.");
+
+                // 🔹 Step 4: Parse appointment time
+                TimeSpan parsedTime;
+                try
+                {
+                    parsedTime = DateTime.ParseExact(dto.AppointmentTime.ToString(), "hh:mm tt", null).TimeOfDay;
+                }
+                catch
+                {
+                    return new ApiResponse<string>(400, "Invalid appointment time format. Use 'hh:mm tt' (e.g. 06:30 PM).");
+                }
+
+                // 🔹 Step 5: Validate current date/time
+                var currentDate = DateTime.Now.Date;
+                var currentTime = DateTime.Now.TimeOfDay;
+
+                if (dto.AppointmentDate.Date < currentDate)
+                    return new ApiResponse<string>(400, "You cannot book an appointment for a past date.");
+
+                if (dto.AppointmentDate.Date == currentDate && parsedTime <= currentTime)
+                    return new ApiResponse<string>(400, "Appointment time must be later than the current time.");
+
+                // 🔹 Step 6: Check if the selected slot exists in doctor availability
+                var doctorAvailability = doctorAvailabilities.FirstOrDefault(a =>
+                    !string.IsNullOrEmpty(a.SlotList) &&
+                    a.SlotList.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                              .Select(s => s.Trim())
+                              .Contains(dto.AppointmentTime.ToString(), StringComparer.OrdinalIgnoreCase));
+
+                if (doctorAvailability == null)
+                    return new ApiResponse<string>(400, "Invalid slot. Doctor not available at that time.");
+
+                // 🔹 Step 7: Check if slot is already booked
+                var allAppointments = await _appointmentRepo.GetAllAsync("SP_APPOINTMENT");
+
+                bool isAlreadyBooked = allAppointments.Any(a =>
+                    a.DoctorId == doctor.DoctorId &&
+                    a.AppointmentDate.Date == dto.AppointmentDate.Date &&
+                    a.AppointmentTime == parsedTime &&
+                    a.AppointmentStatus == AppointmentStatus.Scheduled);
+
+                if (isAlreadyBooked)
+                    return new ApiResponse<string>(400, "Slot already booked by another patient.");
+
+                // 🔹 Step 8: Create appointment entity
+                var appointment = new Appointment
+                {
+                    PatientId = patient.PatientId,
+                    UHID = patient.UHID,
+                    DoctorId = doctor.DoctorId,
+                    AppointmentDate = dto.AppointmentDate,
+                    AppointmentTime = parsedTime,
+                    Mode = dto.Mode,
+                    Notes = dto.Notes
+                };
+
+                // 🔹 Step 9: Save appointment
+                await _appointmentRepo.AddAsync("SP_APPOINTMENT", appointment);
+
+                // 🔹 Step 10: Decrease available slots
+                if (doctorAvailability.AvailableSlots > 0)
+                    doctorAvailability.AvailableSlots--;
+
+                await _availabilityRepo.UpdateAsync("SP_STAFF_AVAILABILITY", doctorAvailability);
+
+                return new ApiResponse<string>(200, "Appointment booked successfully.");
             }
-            catch
+            catch (Exception ex)
             {
-                return new ApiResponse<string>(400, "Invalid appointment time format. Use 'hh:mm tt' (e.g. 06:30 PM).");
+                return new ApiResponse<string>(500, ex.Message);
             }
-
-            bool isAlreadyBooked = allAppointments.Any(a =>
-                a.DoctorId == doctor.DoctorId &&
-                a.AppointmentDate.Date == dto.AppointmentDate.Date &&
-                a.AppointmentTime == parsedTime &&
-                a.AppointmentStatus==AppointmentStatus.Scheduled);
-
-            if (isAlreadyBooked)
-                return new ApiResponse<string>(400, "Slot already booked by another patient.");
-
-
-            var appointment = new Appointment
-            {
-                PatientId = patient.PatientId,
-                UHID = patient.UHID,
-                DoctorId = doctor.DoctorId,
-                AppointmentDate = dto.AppointmentDate,
-                AppointmentTime = parsedTime,
-                Mode = dto.Mode,
-                Notes = dto.Notes
-            };
-
-            await _appointmentRepo.AddAsync("SP_APPOINTMENT", appointment);
-
-
-            if (doctorAvailability.AvailableSlots > 0)
-                doctorAvailability.AvailableSlots--;
-
-            await _availabilityRepo.UpdateAsync("SP_STAFF_AVAILABILITY", doctorAvailability);
-
-            return new ApiResponse<string>(200, "Appointment booked successfully.");
         }
+
 
         public async Task<ApiResponse<IEnumerable<AppointmentDetailsDTO>>> GetAllAppointmentsAsync()
         {
-            var data = await _appointmentRepo.GetAllAsync("SP_APPOINTMENT");
-            var appointments = data.Select(x => new AppointmentDetailsDTO
+            try
             {
-                AppointmentId = x.AppointmentId,
-                PatientId = x.PatientId,
-                UHID = x.UHID,
-                DoctorId = x.DoctorId,
-                AppointmentDate = x.AppointmentDate,
-                AppointmentTime = x.AppointmentTime.ToString(@"hh\:mm"),
-                AppointmentStatus = x.AppointmentStatus,
-                Mode = x.Mode,
-                Notes = x.Notes
-            }).ToList();
+                var data = await _appointmentRepo.GetAllAsync("SP_APPOINTMENT");
+                var appointments = data.Select(x => new AppointmentDetailsDTO
+                {
+                    AppointmentId = x.AppointmentId,
+                    PatientId = x.PatientId,
+                    UHID = x.UHID,
+                    DoctorId = x.DoctorId,
+                    AppointmentDate = x.AppointmentDate,
+                    AppointmentTime = x.AppointmentTime.ToString(@"hh\:mm"),
+                    AppointmentStatus = x.AppointmentStatus,
+                    Mode = x.Mode,
+                    Notes = x.Notes
+                }).ToList();
 
-            return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>
-            (200, "All Appointments Fetched Successfully", appointments);
+                return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>
+                (200, "All Appointments Fetched Successfully", appointments);
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<IEnumerable<AppointmentDetailsDTO>>(500, ex.Message);
+            }
+           
         }
 
         public async Task<ApiResponse<IEnumerable<AppointmentDetailsDTO>>> GetAppointmentsByPatientIdAsync(int userId)
@@ -241,6 +271,7 @@ namespace MediCare.Application.ServiceImplementations
                 return new ApiResponse<string>(404, "Appointment not found or not accessible");
 
             appointment.AppointmentStatus = AppointmentStatus.Cancelled;
+            appointment.RescheduleStatus= ScheduleStatus.Cancelled;
             appointment.CancellationReason = dto.CancellationReason ?? "Cancelled";
             appointment.ModifiedBy = userId;
 
@@ -299,7 +330,7 @@ namespace MediCare.Application.ServiceImplementations
 
                         var allAvailabilities = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
                         var doctorAvailabilities = allAvailabilities
-                            .Where(a => a.StaffId == doctor.DoctorId && a.Date.Date == dto.NewDate.Date)
+                            .Where(a => a.StaffId == doctor.UserId && a.Date.Date == dto.NewDate.Date)
                             .ToList();
 
                         if (doctorAvailabilities.Count == 0)
@@ -336,7 +367,7 @@ namespace MediCare.Application.ServiceImplementations
 
                         var allAvailabilitie = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
                         var doctorAvailabilitie = allAvailabilitie
-                            .Where(a => a.StaffId == newDoctor.DoctorId && a.Date.Date == appointment.AppointmentDate.Date)
+                            .Where(a => a.StaffId == newDoctor.UserId && a.Date.Date == appointment.AppointmentDate.Date)
                             .ToList();
 
                         if (doctorAvailabilitie.Count == 0)
@@ -374,7 +405,7 @@ namespace MediCare.Application.ServiceImplementations
 
                             var allAvailability = await _availabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
                             var doctorAvailabili = allAvailability
-                                .Where(a => a.StaffId == newDoctors.DoctorId && a.Date.Date == dto.NewDate.Date)
+                                .Where(a => a.StaffId == newDoctors.UserId && a.Date.Date == dto.NewDate.Date)
                                 .ToList();
 
                             if (doctorAvailabili.Count == 0)

@@ -204,15 +204,19 @@ namespace MediCare.Application.ServiceImplementations
 
         }
 
-        public async Task<ApiResponse<bool>> UpdateDoctorVerificationStatusAsync(DoctorVerificationUpdateDTO dto)
+        public async Task<ApiResponse<bool>> UpdateDoctorVerificationStatusAsync(DoctorVerificationUpdateDTO dto,int userId)
         {
             try
             {
+                var doctor = await _doctorRepo.GetByIdAsync("SP_DOCTORS", "DOCTORID", dto.DoctorId);
+                if (doctor == null) return new ApiResponse<bool>(404, "Doctor id is not found.");
+                var doctorCredential = (await _doctorCredRepo.GetAllAsync("SP_DOC_CREDENTIALS")).Where(d => d.DoctorId== dto.DoctorId);
+                if (doctorCredential == null) return new ApiResponse<bool>(404, "Doctor doesnot have any credentials");
                 var doctorEntity = new Doctors
                 {
                     DoctorId = dto.DoctorId,
                     VerificationStatus = dto.VerificationStatus,
-                    ModifiedBy = dto.ModifiedBy,
+                    ModifiedBy = userId,
 
                 };
 
