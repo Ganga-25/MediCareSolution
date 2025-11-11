@@ -13,7 +13,7 @@ namespace MediCare.Application.Contracts.Service
         Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetAllAsync();
         Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetByIdAsync(int id);
         Task<ApiResponse<bool>> AddDoctorAvailability(StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role);
-        Task<ApiResponse<bool>> AddLabtechnicianAvailability(StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role);
+        Task<ApiResponse<bool>> AddLabtechnicianAvailability(LabtechnicianAvailabilityCreateUpdateDTO dto, int currentUserId, string role);
         Task<ApiResponse<bool>> UpdateAsync( StaffAvailabilityCreateUpdateDTO dto, int id, string role);
         Task<ApiResponse<IEnumerable<StaffAvailabilityDTO>>> GetByStaffIdAsync(int staffId);
 

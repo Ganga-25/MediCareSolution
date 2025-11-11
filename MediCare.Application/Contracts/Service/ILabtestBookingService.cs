@@ -10,7 +10,8 @@ namespace MediCare.Application.Contracts.Service
 {
     public interface ILabtestBookingService
     {
-        Task<ApiResponse<string>> BookLabTestAsync(LabTestBookingDTO dto, int userId);
+        Task<ApiResponse<string>> BookLabTestAsync(LabTestBookingDTO dto, int userId,string role);
         Task<ApiResponse<string>> CancelBookingAsync(int bookingId, int userId);
+        Task<ApiResponse<IEnumerable<BookedLabTestViewDTO>>>GetbookedlabtestbyUser(int userId);
     }
 }

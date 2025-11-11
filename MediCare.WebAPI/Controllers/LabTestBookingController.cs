@@ -18,8 +18,9 @@ namespace MediCare.WebAPI.Controllers
         [HttpPost("Booking")]
         public async Task<IActionResult> Booking([FromBody]LabTestBookingDTO dTO)
         {
-             int userId=User.GetUserId();   
-            var result= await _labtestbookingService.BookLabTestAsync(dTO, userId);
+             int userId=User.GetUserId(); 
+            string role=User.GetUserRole();
+            var result= await _labtestbookingService.BookLabTestAsync(dTO, userId,role);
             return StatusCode(result.StatusCode, result);
 
         }
@@ -28,6 +29,13 @@ namespace MediCare.WebAPI.Controllers
         {
             int userId = 1; // get from auth later
             var result = await _labtestbookingService.CancelBookingAsync(id, userId);
+            return StatusCode(result.StatusCode, result);
+        }
+        [HttpGet("Patient")]
+        public async Task<IActionResult> GetBookedByPatient()
+        {
+            int userId= User.GetUserId();
+            var result= await _labtestbookingService.GetbookedlabtestbyUser(userId);
             return StatusCode(result.StatusCode, result);
         }
     }

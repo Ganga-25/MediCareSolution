@@ -24,7 +24,7 @@ namespace MediCare.Application.DTOs.AvailabilityDTO
     }
     public class StaffAvailabilityCreateUpdateDTO
     {
-        public int? StaffId { get; set; }
+        //public int? StaffId { get; set; }
         public DateTime Date { get; set; }
         
         public string StartTime { get; set; }
@@ -36,4 +36,19 @@ namespace MediCare.Application.DTOs.AvailabilityDTO
         public string? SlotList { get; set; } // 07:00 AM,07:10 AM,...
         public string? Session { get; set; }
     }
+    public class LabtechnicianAvailabilityCreateUpdateDTO
+    {
+        public int? StaffId { get; set; }
+        public DateTime Date { get; set; }
+
+        public string StartTime { get; set; }
+
+        public string EndTime { get; set; }
+        public int AvailableSlots { get; set; }
+        public int? SlotDuration { get; set; }
+        public Mode? Mode { get; set; }
+        public string? SlotList { get; set; } // 07:00 AM,07:10 AM,...
+        public string? Session { get; set; }
+    }
 }
+

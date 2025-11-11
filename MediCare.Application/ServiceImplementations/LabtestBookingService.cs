@@ -17,77 +17,97 @@ namespace MediCare.Application.ServiceImplementations
         private readonly IGenericRepository<StaffAvailability> _staffAvailabilityRepo;
         private readonly IGenericRepository<LabTestBooking> _labTestBookingRepo;
         private readonly IGenericRepository<LabTests> _labtestRepo;
+        private readonly IGenericRepository<LabTechnicians> _labtechniciansRepo;
+        private readonly IGenericRepository<Patients> _patientRepo;
         public LabTestBookingService(
             IGenericRepository<PatientLabTest> patientLabTestRepo,
             IGenericRepository<StaffAvailability> staffAvailabilityRepo,
             IGenericRepository<LabTestBooking> labTestBookingRepo,
-            IGenericRepository<LabTests> labtestRepo)
+            IGenericRepository<LabTests> labtestRepo,
+            IGenericRepository<LabTechnicians> labtechniciansRepo,
+            IGenericRepository<Patients> patientRepo)
         {
             _patientLabTestRepo = patientLabTestRepo;
             _staffAvailabilityRepo = staffAvailabilityRepo;
             _labTestBookingRepo = labTestBookingRepo;
             _labtestRepo = labtestRepo;
+            _labtechniciansRepo = labtechniciansRepo;
+            _patientRepo = patientRepo;
         }
 
-        public async Task<ApiResponse<string>> BookLabTestAsync(LabTestBookingDTO dto, int userId)
+        public async Task<ApiResponse<string>> BookLabTestAsync(LabTestBookingDTO dto, int userId, string role)
         {
             try
             {
-                // 1️⃣ Check if lab test exists
-                var labtest = await _patientLabTestRepo.GetByIdAsync("SP_PATIENTLABTEST", "ID", dto.LabTestId);
-                if (labtest == null)
-                    return new ApiResponse<string>(404, "Lab test not found");
-                var test = await _labtestRepo.GetByIdAsync("SP_LABTEST", "LABTESTID", dto.LabTestId);
-                if (test == null) return new ApiResponse<string>(404, "Labtest not found.");
+                // 1️⃣ Check if patient lab test exists
+                var patientLabTest = await _patientLabTestRepo.GetByIdAsync("SP_PATIENTLABTEST", "ID", dto.Id);
+                if (patientLabTest == null)
+                    return new ApiResponse<string>(404, "Patient lab test not found");
 
-                // 2️⃣ Ensure test is available in-house
-                if (!labtest.IsInHouse)
+                // 2️⃣ Check if lab test master exists
+                var labTestMaster = await _labtestRepo.GetByIdAsync("SP_LABTEST", "LABTESTID", dto.LabTestId);
+                if (labTestMaster == null)
+                    return new ApiResponse<string>(404, "Lab test not found in master list");
+
+                // 3️⃣ Ensure test is available in-house
+                if (!patientLabTest.IsInHouse)
                     return new ApiResponse<string>(400, "Selected test is not available in the lab");
 
-                // 3️⃣ Check for available slots
-                var staffAvailabilities = await _staffAvailabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY");
+                // 4️⃣ Find available staff slot for LabTechnician
+                var staffAvailabilities = (await _staffAvailabilityRepo.GetAllAsync("SP_STAFF_AVAILABILITY"))
+                                            .Where(l => l.StaffType == StaffType.LabTechnician);
+
+                var session = dto.LabTestTime.ToString(); // Morning / Afternoon
                 var availableSlot = staffAvailabilities.FirstOrDefault(a =>
                     a.Date.Date == dto.LabTestDate.Date &&
-                    a.Session == dto.LabTestTime.ToString() &&
-                    a.AvailableSlots > 0 &&
-                    a.StaffType ==StaffType.LabTechnician);
+                    (a.Session.Equals(session, StringComparison.OrdinalIgnoreCase) ||
+                     a.Session.Equals("Fullday", StringComparison.OrdinalIgnoreCase)) &&
+                    a.AvailableSlots > 0);
 
                 if (availableSlot == null)
                     return new ApiResponse<string>(400, "No available slots for selected date or time");
 
-                // 4️⃣ Check if the same user already booked same test and not completed
+                // 5️⃣ Get LabTechnician entity corresponding to the slot
+                var labTechnician = (await _labtechniciansRepo.GetAllAsync("SP_LABTECH"))
+                                    .FirstOrDefault(l => l.UserId == availableSlot.StaffId);
+
+                if (labTechnician == null)
+                    return new ApiResponse<string>(404, "LabTechnician not found");
+
+                // 6️⃣ Check for duplicate booking
                 var allBookings = await _labTestBookingRepo.GetAllAsync("SP_LABTESTBOOKING");
                 var duplicate = allBookings.FirstOrDefault(b =>
-                    b.PatientId == labtest.PatientId &&
-                    b.LabTestId == labtest.Id &&
-                    (b.Status == LabTestStatus.Scheduled));
+                    b.PatientId == patientLabTest.PatientId &&
+                    b.LabTestId == labTestMaster.LabTestId &&
+                    b.Status == LabTestStatus.Scheduled);
 
                 if (duplicate != null)
                     return new ApiResponse<string>(400, "You already have a booking for this test that is not yet completed");
 
-                // 5️⃣ Create new booking record
+                // 7️⃣ Create new booking with correct LabTechnicianId
                 var newBooking = new LabTestBooking
                 {
-                    PatientId = labtest.PatientId,
-                    DoctorId = labtest.DoctorId,
-                    DepartmentId = labtest.DepartmentId,
-                    LabTestId = labtest.Id,
-                    LabTechnicianId = availableSlot.StaffId,
-                    Amount=test.Price,
+                    PatientId = patientLabTest.PatientId,
+                    DoctorId = patientLabTest.DoctorId,
+                    DepartmentId = patientLabTest.DepartmentId,
+                    LabTestId = labTestMaster.LabTestId,
+                    LabTechnicianId = labTechnician.LabTechnicianId, // ✅ Correct FK
+                    Amount = labTestMaster.Price,
                     LabTestDate = dto.LabTestDate,
                     LabTestTime = dto.LabTestTime,
                     Status = LabTestStatus.Scheduled,
                     PaymentStatus = PaymentStatus.Pending,
-                    CreatedBy = userId.ToString(),
+                    CreatedBy = role,
                     CreatedOn = DateTime.Now,
                     IsDeleted = false
+
                 };
 
                 var inserted = await _labTestBookingRepo.AddAsync("SP_LABTESTBOOKING", newBooking);
                 if (inserted <= 0)
                     return new ApiResponse<string>(400, "Failed to book lab test");
 
-                // 6️⃣ Reduce available slots
+                // 8️⃣ Reduce available slots
                 availableSlot.AvailableSlots -= 1;
                 await _staffAvailabilityRepo.UpdateAsync("SP_STAFF_AVAILABILITY", availableSlot);
 
@@ -98,6 +118,9 @@ namespace MediCare.Application.ServiceImplementations
                 return new ApiResponse<string>(500, ex.Message);
             }
         }
+
+
+
 
         public async Task<ApiResponse<string>> CancelBookingAsync(int bookingId, int userId)
         {
@@ -113,7 +136,7 @@ namespace MediCare.Application.ServiceImplementations
                 booking.Status = LabTestStatus.Cancelled;
                 booking.PaymentStatus = PaymentStatus.Failed;
                 booking.ModifiedBy = userId;
-               
+
 
                 await _labTestBookingRepo.UpdateAsync("SP_LABTESTBOOKING", booking);
 
@@ -135,6 +158,43 @@ namespace MediCare.Application.ServiceImplementations
             catch (Exception ex)
             {
                 return new ApiResponse<string>(500, ex.Message);
+            }
+        }
+        public async Task<ApiResponse<IEnumerable<BookedLabTestViewDTO>>> GetbookedlabtestbyUser(int userId)
+        {
+            try
+            {
+                var patient= (await _patientRepo.GetAllAsync("SP_Patients")).SingleOrDefault(p=>p.UserId==userId);
+                if (patient == null) return new ApiResponse<IEnumerable<BookedLabTestViewDTO>>(400, "No patient found");
+
+                var bookedlabtest = (await _labTestBookingRepo.GetAllAsync("SP_LABTESTBOOKING"))
+                                 .Where(b => b.PatientId == patient.PatientId);
+                if (bookedlabtest == null) return new ApiResponse<IEnumerable<BookedLabTestViewDTO>>(404, "No labtest bookings for the user");
+
+                var labtests = bookedlabtest.Select(s => new BookedLabTestViewDTO
+                {
+                    Id = s.Id,
+                    LabTestDate = s.LabTestDate,
+                    LabTestId = s.LabTestId,
+                    LabTestTime = s.LabTestTime,
+                    LabTechnicianId = s.LabTechnicianId,
+                    DepartmentId = s.DepartmentId,
+                    DoctorId = s.DoctorId,
+                    Amount = s.Amount,
+                    PatientId= s.PatientId,
+                    PaymentMethod= s.PaymentMethod,
+                    PaymentStatus= s.PaymentStatus,
+                    Status= s.Status
+                    
+
+                }).ToList();
+
+                return new ApiResponse<IEnumerable<BookedLabTestViewDTO>>(200, "Booked Labtests fetched successfully.", labtests);
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<IEnumerable<BookedLabTestViewDTO>>(500, ex.Message);
             }
         }
     }

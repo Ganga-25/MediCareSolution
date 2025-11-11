@@ -129,7 +129,7 @@ namespace MediCare.Application.ServiceImplementations
                 var newStaff = new StaffAvailability
                 {
                     StaffType = staffType,
-                    StaffId = staffId,
+                    StaffId = currentUserId,
                     Date = dto.Date,
                     StartTime = startTime,
                     EndTime = endTime,
@@ -154,14 +154,14 @@ namespace MediCare.Application.ServiceImplementations
             }
         }
 
-        public async Task<ApiResponse<bool>> AddLabtechnicianAvailability(StaffAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
+        public async Task<ApiResponse<bool>> AddLabtechnicianAvailability(LabtechnicianAvailabilityCreateUpdateDTO dto, int currentUserId, string role)
         {
             try
             {
-                if (dto.StaffId == null || dto.StaffId == 0)
-                    return new ApiResponse<bool>(400, "Lab technician StaffId is required");
+                
+                    
 
-                var labtech = (await _LabtechRepo.GetAllAsync("SP_LABTECH"))
+               var labtech = (await _LabtechRepo.GetAllAsync("SP_LABTECH"))
                               .FirstOrDefault(x => x.UserId == dto.StaffId);
                 if (labtech == null)
                     return new ApiResponse<bool>(404, "Lab technician not found");

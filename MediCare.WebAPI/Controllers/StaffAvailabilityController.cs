@@ -53,7 +53,7 @@ namespace MediCare.WebAPI.Controllers
         }
 
         [HttpPost("Labtechnician")]
-        public async Task<IActionResult> Addlabtecnician([FromBody] StaffAvailabilityCreateUpdateDTO dto)
+        public async Task<IActionResult> Addlabtecnician([FromBody] LabtechnicianAvailabilityCreateUpdateDTO dto)
         {
             int  currentUserId = User.GetUserId();
             string role = User.GetUserRole();
