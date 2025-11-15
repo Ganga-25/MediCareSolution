@@ -68,6 +68,24 @@ namespace MediCare.WebAPI.Controllers
             // Map AuthResponse to proper HTTP status code
             return StatusCode(result.StatusCode, result);
         }
+        [HttpGet("Doctors")]
+        public async Task<IActionResult> getdoctors()
+        {
+            var result = await _userService.GetallDoctors();
+            return StatusCode(result.StatusCode,result);
+        }
+        [HttpGet("Patients")]
+        public async Task<IActionResult> getpatients()
+        {
+            var result= await _userService.GetAllPatients();
+            return StatusCode(result.StatusCode, result);
+        }
+        [HttpGet("Labtechnician")]
+        public async Task<IActionResult> getlabtechnician()
+        {
+            var result= await _userService.getalllabtechnician();
+            return StatusCode(result.StatusCode, result);
+        }
     }
 
 

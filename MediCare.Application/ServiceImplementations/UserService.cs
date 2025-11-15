@@ -1,8 +1,10 @@
-﻿using MediCare.Application.Contracts;
+﻿using MediCare.Application.Common;
+using MediCare.Application.Contracts;
 using MediCare.Application.Contracts.Repository;
 using MediCare.Application.Contracts.Service;
 using MediCare.Application.DTOs;
 using MediCare.Application.DTOs.AuthDTO;
+using MediCare.Application.DTOs.UsersDTO;
 using MediCare.Domain.Entities;
 using MediCare.Domain.Enums;
 using Microsoft.Extensions.Configuration;
@@ -200,6 +202,97 @@ namespace MediCare.Application.ServiceImplementations
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public async Task<ApiResponse<List<DoctorInformationDTO>>> GetallDoctors()
+        {
+            try
+            {
+                var userdoctors = await _userRepo.GetAllAsync("Users");
+                var doctors = await _doctorRepo.GetAllAsync("SP_DOCTORS");
+
+                var result = (from u in userdoctors
+                              join d in doctors on u.UserId equals d.UserId
+                              select new DoctorInformationDTO
+                              {
+                                  UserId = u.UserId,
+                                  UserEmail=u.UserEmail,
+                                  UserName = u.UserName,
+
+                                  DoctorId=d.DoctorId,
+                                  DepartmentId=d.DepartmentId,
+                                  ProfilePhoto=d.ProfilePhoto,
+                                  ContactNumber=d.ContactNumber,
+                                  Experience=d.Experience,
+                                  Fees=d.Fees,
+                                  MedicalRegistrationNumber=d.MedicalRegistrationNumber,
+                                  IsAvailable=d.IsAvailable,
+                                  VerificationStatus=d.VerificationStatus
+                              }).ToList();
+                return new ApiResponse<List<DoctorInformationDTO>>(200, "Doctor details", result);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<List<DoctorInformationDTO>>(500, ex.Message);
+            }
+        }
+        public async Task<ApiResponse<List<PatientInformationDTO>>> GetAllPatients()
+        {
+            try
+            {
+                var userPatients = await _userRepo.GetAllAsync("Users");
+                var patients = await _patientRepo.GetAllAsync("SP_Patients");
+                var result = (from u in userPatients
+                              join p in patients on u.UserId equals p.UserId
+                              select new PatientInformationDTO
+                              {
+                                  UserId = u.UserId,
+                                  UserEmail = u.UserName,
+                                  UserName = u.UserName,
+
+                                  PatientId = p.PatientId,
+                                  UHID = p.UHID,
+                                  ContactNumber = p.ContactNumber,
+                                  Age = p.Age,
+                                  Gender = p.Gender
+
+                              }).ToList();
+                return new ApiResponse<List<PatientInformationDTO>>(200, "Patient Informations", result);
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<List<PatientInformationDTO>>(500,ex.Message);
+            }
+        }
+        public async Task<ApiResponse<List<LabtechnicianInformationDTO>>> getalllabtechnician()
+        {
+            try
+            {
+                var userLabtechnician = await _userRepo.GetAllAsync("Users");
+                var labtechnicians = await _labTechniciansRepo.GetAllAsync("SP_LABTECH");
+                var result= (from u in userLabtechnician
+                             join l in labtechnicians on u.UserId equals l.UserId
+                             select new LabtechnicianInformationDTO
+                             {
+                                 UserEmail = u.UserName,
+                                 UserId=u.UserId,
+                                 UserName=u.UserName,
+
+                                 LabTechnicianId=l.LabTechnicianId,
+                                 DepartmentId=l.DepartmentId,
+                                 ContactNumber=l.ContactNumber,
+                                 ProfilePhoto=l.ProfilePhoto,
+                                 LicenceNumber=l.LicenceNumber,
+                                 IsActive=l.IsActive,
+                                 VerificationStatus=l.VerificationStatus
+                             }).ToList();
+                return new ApiResponse<List<LabtechnicianInformationDTO>>(200, "Labtechnicians Informations.", result);
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<List<LabtechnicianInformationDTO>>(500,ex.Message);
+            }
         }
     }
     
